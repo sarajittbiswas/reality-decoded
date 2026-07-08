@@ -1,6 +1,13 @@
 import { notFound } from 'next/navigation';
 
-export const runtime = 'edge';
+// This tells Next.js to pre-build these exact 3 articles as tiny, static files
+export function generateStaticParams() {
+  return [
+    { slug: 'corporate-shell-games' },
+    { slug: 'digital-breadcrumbs' },
+    { slug: 'factory-conditions' }
+  ];
+}
 
 // Updated Mock database to match our new, highly-accurate article links
 const MOCK_ARTICLES: Record<string, { title: string; author: string; date: string; type: string; content: string[] }> = {
