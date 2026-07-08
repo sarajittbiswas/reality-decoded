@@ -1,7 +1,7 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
-
+export const dynamic = 'force-dynamic';
 export default async function Home() {
   // Pull database videos
   const db = (getRequestContext().env as any).reality_decoded_db;
