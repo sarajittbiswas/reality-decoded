@@ -5,7 +5,7 @@ export const runtime = 'edge';
 export default async function VideosPage() {
   // Pull all videos from the database
   const db = (getRequestContext().env as any).reality_decoded_db;
-  const { results } = await db.prepare('SELECT * FROM videos ORDER BY created_at DESC').all();
+  const { results } = await db.prepare('SELECT * FROM videos').all();
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] pt-32 pb-24">

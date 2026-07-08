@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="bg-[#FFFFFF] text-white font-sans antialiased flex flex-col min-h-screen">
         
         {/* TOP NAVIGATION BAR */}

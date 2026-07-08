@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export default async function Home() {
   // Pull database videos
   const db = (getRequestContext().env as any).reality_decoded_db;
-  const { results } = await db.prepare('SELECT * FROM videos ORDER BY created_at DESC').all();
+  const { results } = await db.prepare('SELECT * FROM videos').all();
 
   return (
     <main className="w-full">
