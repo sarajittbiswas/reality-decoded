@@ -1,12 +1,11 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
+import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev';
 
-const nextConfig: NextConfig = {
-	/* config options here */
-};
+// Removed the 'await' to make TypeScript happy!
+if (process.env.NODE_ENV === 'development') {
+  setupDevPlatform();
+}
+
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
-
-// Enable calling `getCloudflareContext()` in `next dev`.
-// See https://opennext.js.org/cloudflare/bindings#local-access-to-bindings.
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-initOpenNextCloudflareForDev();
