@@ -4,7 +4,7 @@ export const runtime = 'edge';
 
 export default async function Home() {
   // Pull database videos
-  const db = (getRequestContext().env as any).reality_decoded_db;
+  
   const { results } = await db.prepare('SELECT * FROM videos ORDER BY created_at DESC').all();
 
   return (
