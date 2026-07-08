@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           <section>
             <h3 className="text-2xl font-bold text-white mb-4">5. Contact Us</h3>
             <p className="leading-relaxed text-sm">
-              If you have any questions about this Privacy Policy or our security protocols, please reach out via our general <a href="/contact" className="text-red-500 hover:text-white transition-colors underline">Contact page</a> or email us directly at admin@realitydecoded.in.
+              If you have any questions about this Privacy Policy or our security protocols, please reach out via our general <a href="/contact" className="text-red-500 hover:text-white transition-colors underline">Contact page</a> or email us directly at <a href="mailto:admin@realitydecoded.in" className="text-red-500 hover:text-white transition-colors underline">admin@realitydecoded.in</a>.
             </p>
           </section>
 
