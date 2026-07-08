@@ -1,3 +1,4 @@
+import Navbar from '@/components/Navbar';
 import type { Metadata } from 'next';
 import './globals.css';
 
@@ -19,28 +20,7 @@ export default function RootLayout({
       <body className="bg-[#FFFFFF] text-white font-sans antialiased flex flex-col min-h-screen">
         
         {/* TOP NAVIGATION BAR */}
-        <nav className="fixed w-full z-50 bg-[]/90 backdrop-blur-md border-b border-white/10 transition-all duration-300">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            
-            {/* Logo */}
-            <a href="/" className="text-2xl font-extrabold tracking-tighter flex items-center gap-1">
-              <img src="/final_no_bg.png" alt="Reality Decoded Logo" className="w-13 h-13 object-contain" />
-         <span className="text-white">realitydecoded</span>
-            </a>
-
-            {/* Links */}
-            <div className="hidden md:flex items-center gap-8 font-semibold text-sm text-gray-300">
-              <a href="/" className="hover:text-white transition-colors">Home</a>
-              <a href="/videos" className="hover:text-white transition-colors">Videos</a>
-              <a href="/blogs" className="hover:text-white transition-colors">Blogs</a>
-              
-              {/* Big CTA Button */}
-              <a href="/share" className="bg-white text-red-600 px-6 py-2.5 rounded-full font-bold hover:bg-black transition-colors shadow-[0_0_15px_rgba(220,38,38,0.4)]">
-                Share Your Story
-              </a>
-            </div>
-          </div>
-        </nav>
+        <Navbar />
 
         {/* MAIN PAGE CONTENT INJECTED HERE */}
         <div className="flex-grow">
@@ -53,9 +33,9 @@ export default function RootLayout({
             <div>
               {/* Footer Logo */}
               {/* <img 
-                src="/final_no_bg.png" 
+                src="/final_01.png" 
                 alt="Reality Decoded Icon" 
-                className="block mx-auto w-10 h-10 object-contain mb-4 grayscale hover:grayscale-0 transition-all duration-300" 
+                className="block w-5 h-5 object-contain mb-4 grayscale-0 hover:grayscale transition-all duration-300" 
               /> */}
               
               <h4 className="text-white font-bold text-lg mb-4">Reality Decoded</h4>
