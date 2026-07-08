@@ -4,10 +4,9 @@ export const runtime = 'edge';
 
 export default async function Home() {
   // Pull database videos
-  //const db = (getRequestContext().env as any).reality_decoded_db;
-  //const { results } = await db.prepare('SELECT * FROM videos ORDER BY created_at DESC').all();
-// 2. Add this test line:
-const videos = { results: [{ title: "Test Connection Successful" }] };
+  const db = (getRequestContext().env as any).reality_decoded_db;
+  const { results } = await db.prepare('SELECT * FROM videos ORDER BY created_at DESC').all();
+
   return (
     <main className="w-full">
       
