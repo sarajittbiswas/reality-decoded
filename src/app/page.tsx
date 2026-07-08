@@ -65,7 +65,7 @@ export default async function Home() {
   <a href={`/watch/${video.id}`} key={video.id} className="block group">
                 <article className="rounded-xl overflow-hidden bg-[#141414] border border-white/5 transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-[0_0_20px_rgba(220,38,38,0.2)] h-full">
                   <div className="aspect-video bg-gray-900 overflow-hidden relative">
-                    <img src={`https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`} alt={video.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop" alt={video.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center pl-1 shadow-lg">
                         <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>

@@ -29,11 +29,7 @@ export default async function VideosPage() {
                 
                 {/* Thumbnail */}
                 <div className="aspect-video bg-gray-900 overflow-hidden relative">
-                  <img 
-                    src={`https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`} 
-                    alt={video.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  />
+                  <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop" alt={video.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   {/* Play Button Overlay */}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center pl-1 shadow-lg">
