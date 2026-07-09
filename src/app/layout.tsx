@@ -83,10 +83,11 @@ export default function RootLayout({
               </div>
             </div>
             <div>
-              <h4 className="text-white font-bold mb-4">Pages</h4>
+              <h4 className="text-white font-bold mb-4">Company</h4>
               <ul className="space-y-2">
+                <li><a href="/team" className="hover:text-red-500">Our Team</a></li>
                 <li><a href="/about" className="hover:text-red-500">About Us</a></li>
-                <li><a href="/contact" className="hover:text-red-500">Contact</a></li>
+                <li><a href="/contact" className="hover:text-red-500">Contact Us</a></li>
                 <li><a href="/blogs" className="hover:text-red-500">Blog</a></li>
               </ul>
             </div>

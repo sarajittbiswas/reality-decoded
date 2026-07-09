@@ -67,7 +67,7 @@ export default function Navbar() {
   <span className="absolute -bottom-1 left-0 w-full h-[2px] bg-purple-500 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center shadow-[0_0_12px_rgba(168,85,247,0.9)]"></span>
 </Link>
           <Link 
-  href="/articles" 
+  href="/blogs" 
   className="
     group relative px-2 py-1 text-sm font-bold text-gray-300 
     transition-all duration-300 ease-out 
@@ -80,6 +80,19 @@ export default function Navbar() {
 </Link>
 
 <Link 
+  href="/team" 
+  className="
+    group relative px-2 py-1 text-sm font-bold text-gray-300 
+    transition-all duration-300 ease-out 
+    hover:text-purple-400 hover:scale-105 
+    hover:drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]
+  "
+>
+  Team
+  <span className="absolute -bottom-1 left-0 w-full h-[2px] bg-purple-500 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center shadow-[0_0_12px_rgba(168,85,247,0.9)]"></span>
+</Link>
+
+<Link 
   href="/contact" 
   className="
     group relative px-2 py-1 text-sm font-bold text-gray-300 
@@ -88,7 +101,7 @@ export default function Navbar() {
     hover:drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]
   "
 >
-  Contact Us
+  Contact
   <span className="absolute -bottom-1 left-0 w-full h-[2px] bg-purple-500 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center shadow-[0_0_12px_rgba(168,85,247,0.9)]"></span>
 </Link>
 
