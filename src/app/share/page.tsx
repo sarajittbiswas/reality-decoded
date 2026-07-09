@@ -110,10 +110,12 @@ export default function ShareStoryPage() {
     }
   };
 
-  // Helper to format names to "Joh..." or "Ano..."
+  // Helper to format names to just the First Name
   const formatConfidentialName = (name: string) => {
-    if (!name || name.trim() === '') return 'Ano...';
-    return name.substring(0, 3) + '...';
+    if (!name || name.trim() === '') return 'Anonymous';
+    
+    // This splits the name by spaces and grabs only the first word
+    return name.trim().split(' ')[0];
   };
 
   return (
