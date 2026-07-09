@@ -30,23 +30,70 @@ export default function Navbar() {
 
         {/* Desktop Links + Search */}
         <div className="hidden md:flex items-center gap-8 font-semibold text-sm text-gray-300">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <Link href="/videos" className="hover:text-white transition-colors">Videos</Link>
-          <Link href="/blogs" className="hover:text-white transition-colors">Articles</Link>
+          <Link 
+  href="/" 
+  className="
+    group relative px-2 py-1 text-sm font-bold text-gray-300 
+    transition-all duration-300 ease-out 
+    hover:text-purple-400 hover:scale-105 
+    hover:drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]
+  "
+>
+  Home
+  {/* The glowing underline that slides out from the center on hover */}
+  <span className="absolute -bottom-1 left-0 w-full h-[2px] bg-purple-500 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center shadow-[0_0_12px_rgba(168,85,247,0.9)]"></span>
+</Link>
+          <Link 
+  href="/videos" 
+  className="
+    group relative px-2 py-1 text-sm font-bold text-gray-300 
+    transition-all duration-300 ease-out 
+    hover:text-purple-400 hover:scale-105 
+    hover:drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]
+  "
+>
+  Videos
+  <span className="absolute -bottom-1 left-0 w-full h-[2px] bg-purple-500 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center shadow-[0_0_12px_rgba(168,85,247,0.9)]"></span>
+</Link>
+          <Link 
+  href="/articles" 
+  className="
+    group relative px-2 py-1 text-sm font-bold text-gray-300 
+    transition-all duration-300 ease-out 
+    hover:text-purple-400 hover:scale-105 
+    hover:drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]
+  "
+>
+  Articles
+  <span className="absolute -bottom-1 left-0 w-full h-[2px] bg-purple-500 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center shadow-[0_0_12px_rgba(168,85,247,0.9)]"></span>
+</Link>
 
-          {/* Hover Expandable Search Form (NOW CONNECTED!) */}
-          <form onSubmit={handleSearch} className="group flex items-center bg-transparent hover:bg-black/50 rounded-full transition-all duration-500 border border-transparent hover:border-white/20 overflow-hidden">
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-0 bg-transparent text-white placeholder-gray-400 focus:outline-none transition-all duration-500 group-hover:w-40 group-hover:pl-4 py-2 text-sm"
-            />
-            <button type="submit" className="p-2.5 text-gray-300 hover:text-white transition-colors cursor-pointer shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            </button>
-          </form>
+<Link 
+  href="/contact" 
+  className="
+    group relative px-2 py-1 text-sm font-bold text-gray-300 
+    transition-all duration-300 ease-out 
+    hover:text-purple-400 hover:scale-105 
+    hover:drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]
+  "
+>
+  Contact Us
+  <span className="absolute -bottom-1 left-0 w-full h-[2px] bg-purple-500 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center shadow-[0_0_12px_rgba(168,85,247,0.9)]"></span>
+</Link>
+
+          {/* Hover Expandable Search Form (Upgraded to Cyberpunk Purple) */}
+<form onSubmit={handleSearch} className="group flex items-center bg-transparent hover:bg-[#111111]/80 hover:backdrop-blur-md rounded-full transition-all duration-500 border border-transparent hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] overflow-hidden">
+  <input 
+    type="text" 
+    placeholder="Search..." 
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="w-0 bg-transparent text-white placeholder-gray-500 caret-purple-500 focus:outline-none transition-all duration-500 group-hover:w-40 group-hover:pl-4 py-2 text-sm"
+  />
+  <button type="submit" className="p-2.5 text-gray-300 hover:text-purple-400 transition-all duration-300 ease-out cursor-pointer shrink-0 hover:scale-110 active:scale-95">
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+  </button>
+</form>
 
          {/* Big CTA Button */}
           <Link 
