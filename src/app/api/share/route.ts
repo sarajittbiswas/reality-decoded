@@ -26,9 +26,9 @@ export async function GET() {
   try {
     const db = (getRequestContext().env as any).reality_decoded_db;
     
-    // Pull the latest 6 submissions
+    // Pull the latest 7 submissions
     const { results } = await db.prepare(
-      'SELECT name, subject FROM messages ORDER BY created_at DESC LIMIT 6'
+      'SELECT name, subject FROM messages ORDER BY created_at DESC LIMIT 7'
     ).all();
     
     return new Response(JSON.stringify(results), { status: 200 });
