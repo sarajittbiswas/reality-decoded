@@ -23,11 +23,22 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         
         {/* Logo */}
-        <Link href="/" className="text-2xl font-extrabold tracking-tighter flex items-center gap-1">
-          <img src="/final_no_bg.png" alt="Reality Decoded Logo" className="w-13 h-13 object-contain" />
-          <span className="text-white">realitydecoded</span>
-        </Link>
-
+<Link 
+  href="/" 
+  className="group text-2xl font-extrabold tracking-tighter flex items-center gap-1 transition-all duration-500"
+>
+  {/* The Image: Gets a subtle red drop-shadow on hover */}
+  <img 
+    src="/final_no_bg.png" 
+    alt="Reality Decoded Logo" 
+    className="w-13 h-13 object-contain transition-all duration-500 group-hover:drop-shadow-[0_0_12px_rgba(220,38,38,0.6)]" 
+  />
+  
+  {/* The Text: 'reality' stays white, 'decoded' shifts from gray to neon purple */}
+  <span className="text-white transition-colors duration-500">
+    reality<span className="text-gray-400 group-hover:text-purple-400 transition-colors duration-500">decoded</span>
+  </span>
+</Link>
         {/* Desktop Links + Search */}
         <div className="hidden md:flex items-center gap-8 font-semibold text-sm text-gray-300">
           <Link 
