@@ -1,12 +1,72 @@
+"use client";
+
+import { useState } from 'react';
 import { Space_Grotesk } from 'next/font/google';
+import Link from 'next/link';
 
 // Initialize the premium font
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-
 export default function ContactPage() {
+  // State to handle form inputs
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+  
+  // State for button loading/success UI
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('submitting');
+
+    try {
+      // 1. TRANSMIT TO CLOUDFLARE D1 DATABASE
+      const dbRequest = fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      // 2. TRANSMIT TO FORMSPREE (Email Notification)
+      // IMPORTANT: Replace the URL below with your actual Formspree endpoint
+      const emailRequest = fetch('https://formspree.io/f/xykqawpo', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      // Fire both requests at the exact same time
+      const [dbResponse, emailResponse] = await Promise.all([dbRequest, emailRequest]);
+
+      if (dbResponse.ok && emailResponse.ok) {
+        setStatus('success');
+        setFormData({ name: '', email: '', subject: '', message: '' });
+        
+        // Reset button after 3 seconds
+        setTimeout(() => setStatus('idle'), 3000);
+      } else {
+        // If one succeeds but the other fails
+        setStatus('idle');
+        alert("Transmission partially failed. Please check your connection and try again.");
+      }
+    } catch (error) {
+      setStatus('idle');
+      alert("Network error. Transmission failed.");
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
   return (
     <main className="w-full bg-[#0a0a0a] text-white min-h-screen overflow-hidden">
       
@@ -61,7 +121,7 @@ export default function ContactPage() {
           {/* LEFT SIDE: Contact Methods */}
           <div className="flex flex-col gap-6">
             
-            {/* Secure Tip Line Card */}
+            {/* Secure Tip Line Card (ACTIVATED) */}
             <article className="group relative bg-[#111111]/80 backdrop-blur-xl p-8 rounded-3xl border border-white/5 transition-all duration-500 hover:-translate-y-1 hover:border-red-500/40 hover:shadow-[0_10px_40px_rgba(220,38,38,0.15)] overflow-hidden">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 group-hover:via-red-500/50 to-transparent transition-colors duration-500"></div>
               <div className="flex items-start gap-6 relative z-10">
@@ -71,11 +131,17 @@ export default function ContactPage() {
                 <div>
                   <h3 className={`${spaceGrotesk.className} text-xl font-bold text-white mb-2 group-hover:text-red-400 transition-colors`}>Secure Tip Line</h3>
                   <p className="text-gray-400 text-sm leading-relaxed mb-4">
-                    For whistleblowers and highly sensitive information. Use our encrypted PGP key for untraceable communication.
+                    For whistleblowers and highly sensitive information. Download our PGP public key to encrypt your transmission before emailing.
                   </p>
-                  <a href="#" className="text-red-500 text-sm font-bold hover:text-red-400 transition-colors flex items-center gap-1">
-                    Get PGP Key <span>&rarr;</span>
-                  </a>
+                  <div className="flex gap-4">
+                    {/* Link to download your PGP key (Place a file named public-key.asc in your public folder) */}
+                    <a href="/public-key.asc" download className="text-red-500 text-sm font-bold hover:text-red-400 transition-colors flex items-center gap-1">
+                      Download PGP Key <span>&darr;</span>
+                    </a>
+                    <a href="mailto:secure@realitydecoded.com" className="text-gray-500 text-sm font-bold hover:text-white transition-colors">
+                      secure@realitydecoded.com
+                    </a>
+                  </div>
                 </div>
               </div>
             </article>
@@ -93,10 +159,7 @@ export default function ContactPage() {
                     Questions about our investigations, feedback on recent videos, or ideas for future stories.
                   </p>
                   <a href="mailto:info@realitydecoded.com" className="text-purple-400 text-sm font-bold hover:text-purple-300 transition-colors">
-                    info@realitydecoded.in
-                  </a> <br></br>
-                  <a href="mailto:info@realitydecoded.com" className="text-purple-400 text-sm font-bold hover:text-purple-300 transition-colors">
-                    hello@realitydecoded.in
+                    info@realitydecoded.com
                   </a>
                 </div>
               </div>
@@ -115,7 +178,7 @@ export default function ContactPage() {
                     For interview requests, media syndication, or collaboration with other creators.
                   </p>
                   <a href="mailto:press@realitydecoded.com" className="text-blue-400 text-sm font-bold hover:text-blue-300 transition-colors">
-                    admin@realitydecoded.in
+                    press@realitydecoded.com
                   </a>
                 </div>
               </div>
@@ -123,14 +186,14 @@ export default function ContactPage() {
 
           </div>
 
-          {/* RIGHT SIDE: Direct Message Form */}
+          {/* RIGHT SIDE: Direct Message Form (NOW CONNECTED) */}
           <div className="relative bg-[#111111]/50 backdrop-blur-md p-8 md:p-12 rounded-[2.5rem] border border-white/5 shadow-2xl h-fit">
             
             <h2 className={`${spaceGrotesk.className} text-3xl font-bold text-white mb-8`}>
               Send a Transmission
             </h2>
 
-            <form className="flex flex-col gap-6">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               
               {/* Input Group: Name & Email */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -139,6 +202,9 @@ export default function ContactPage() {
                   <input 
                     type="text" 
                     id="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
                     placeholder="John Doe"
                     className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all duration-300"
                   />
@@ -148,6 +214,9 @@ export default function ContactPage() {
                   <input 
                     type="email" 
                     id="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
                     placeholder="secure@proton.me"
                     className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all duration-300"
                   />
@@ -160,6 +229,9 @@ export default function ContactPage() {
                 <input 
                   type="text" 
                   id="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  required
                   placeholder="Regarding the latest investigation..."
                   className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all duration-300"
                 />
@@ -170,15 +242,19 @@ export default function ContactPage() {
                 <label htmlFor="message" className="text-sm font-bold text-gray-400 uppercase tracking-wider">Message</label>
                 <textarea 
                   id="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
                   rows={5}
                   placeholder="Enter your transmission here..."
                   className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all duration-300 resize-none"
                 ></textarea>
               </div>
 
-              {/* Submit Button */}
+              {/* Submit Button (Animated states based on status) */}
               <button 
-                type="button" 
+                type="submit" 
+                disabled={status === 'submitting'}
                 className="
                   group relative inline-flex items-center justify-center w-full sm:w-auto self-start mt-4
                   px-10 py-4 rounded-full font-bold text-lg tracking-wide
@@ -186,12 +262,18 @@ export default function ContactPage() {
                   transition-all duration-300 ease-out
                   hover:bg-black hover:text-red-500 hover:scale-105
                   hover:shadow-[0_0_35px_rgba(168,85,247,0.6)]
-                  active:scale-95
+                  active:scale-95 disabled:opacity-50 disabled:pointer-events-none
                   border border-transparent hover:border-purple-500/50
                 "
               >
-                Transmit Message
-                <svg className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                {status === 'idle' && (
+                  <>
+                    Transmit Message
+                    <svg className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                  </>
+                )}
+                {status === 'submitting' && 'Encrypting...'}
+                {status === 'success' && 'Transmission Sent ✓'}
               </button>
 
             </form>
@@ -199,7 +281,6 @@ export default function ContactPage() {
 
         </div>
       </section>
-
     </main>
   );
 }
