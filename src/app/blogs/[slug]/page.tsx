@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation';
+import { Space_Grotesk } from 'next/font/google';
+import Interactions from '@/components/Interactions'; // <-- INJECTED HERE
 
-// This tells Next.js to pre-build these exact 3 articles as tiny, static files
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
+
 export function generateStaticParams() {
   return [
     { slug: 'corporate-shell-games' },
@@ -9,7 +12,6 @@ export function generateStaticParams() {
   ];
 }
 
-// Updated Mock database to match our new, highly-accurate article links
 const MOCK_ARTICLES: Record<string, { title: string; author: string; date: string; type: string; content: string[] }> = {
   'corporate-shell-games': {
     title: 'Corporate Shell Games: Tracing the Offshore Billions',
@@ -55,35 +57,54 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   }
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] pt-32 pb-24">
-      <article className="max-w-3xl mx-auto px-6">
+    <main className="min-h-screen bg-[#0a0a0a] pt-32 pb-24 relative">
+      {/* Subtle Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[50%] h-[30%] bg-purple-900/10 blur-[120px] pointer-events-none z-0"></div>
+
+      <article className="max-w-3xl mx-auto px-6 relative z-10">
         
-        <div className="mb-8 border-b border-white/10 pb-6">
-          <span className="inline-block bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest mb-4">
-            {article.type}
-          </span>
-          <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight mb-4">
+        {/* Document Header */}
+        <div className="mb-10 border-b border-white/5 pb-8">
+          <div className="flex items-center justify-between mb-6">
+            <span className="inline-block bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-mono font-bold px-3 py-1 rounded uppercase tracking-widest">
+              {article.type}
+            </span>
+            <span className="text-xs text-gray-600 font-mono tracking-widest">CLASSIFIED ID: RD-{resolvedParams.slug.substring(0,6).toUpperCase()}</span>
+          </div>
+          
+          <h1 className={`${spaceGrotesk.className} text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight mb-6`}>
             {article.title}
           </h1>
+          
           <div className="flex items-center gap-3 text-sm text-gray-500 font-mono">
-            <span>By {article.author}</span>
+            <span className="text-purple-400">By {article.author}</span>
             <span>•</span>
             <span>{article.date}</span>
           </div>
         </div>
 
-        <div className="space-y-6 text-gray-300 text-lg leading-relaxed font-light">
-          {article.content.map((paragraph, index) => (
-            <p key={index} className="first-letter:text-5xl first-letter:font-bold first-letter:text-red-600 first-letter:float-left first-letter:mr-3 first-letter:mt-1 border-l border-transparent pl-0">
-              {index === 0 ? paragraph : paragraph.replace(/^"/, '')}
-            </p>
-          ))}
+        {/* Document Body */}
+        <div className="bg-[#111111]/50 backdrop-blur-sm border border-white/5 p-8 md:p-12 rounded-2xl shadow-xl">
+          <div className="space-y-6 text-gray-300 text-lg leading-relaxed font-light mb-8">
+            {article.content.map((paragraph, index) => (
+              <p key={index} className="pl-4 border-l border-purple-500/30 hover:border-purple-400 transition-colors">
+                {paragraph}
+              </p>
+            ))}
+          </div>
+          
+          {/* THE INTERACTIONS COMPONENT APPEARS HERE */}
+          <Interactions id={`blog-${resolvedParams.slug}`} title={article.title} />
+
         </div>
 
-        <div className="mt-16 pt-8 border-t border-white/10">
-          <a href="/blogs" className="inline-flex items-center gap-2 text-red-500 hover:text-white transition-colors font-bold uppercase tracking-widest text-sm">
-            &larr; Back to Field Reports
+        {/* Footer Navigation */}
+        <div className="mt-12 pt-8 flex items-center justify-between">
+          <a href="/blogs" className="inline-flex items-center gap-2 text-gray-400 hover:text-purple-400 transition-colors font-mono font-bold uppercase tracking-widest text-xs group">
+            <span className="transform group-hover:-translate-x-1 transition-transform">&larr;</span> 
+            Close File
           </a>
+          <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">End of Transmission</span>
         </div>
 
       </article>
