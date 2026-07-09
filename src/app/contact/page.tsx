@@ -34,7 +34,7 @@ export default function ContactPage() {
 
       // 2. TRANSMIT TO FORMSPREE (Email Notification)
       // IMPORTANT: Replace the URL below with your actual Formspree endpoint
-      const emailRequest = fetch('https://formspree.io/f/xykqawpo', {
+      const emailRequest = fetch(process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT!, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
