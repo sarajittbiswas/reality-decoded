@@ -173,7 +173,9 @@ export default function Navbar() {
 
           <Link href="/" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Home</Link>
           <Link href="/videos" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Videos</Link>
-          <Link href="/blogs" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Blogs</Link>
+          <Link href="/blogs" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Articles</Link>
+          <Link href="/team" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Team</Link>
+          <Link href="/contact" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Contact</Link>
           <Link href="/share" onClick={() => setIsOpen(false)} className="block w-full text-center bg-white text-red-600 px-6 py-3 rounded-full font-bold hover:bg-gray-200 mt-4">Share Your Story</Link>
         </div>
       )}
