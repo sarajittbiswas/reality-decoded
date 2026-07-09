@@ -32,7 +32,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-8 font-semibold text-sm text-gray-300">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <Link href="/videos" className="hover:text-white transition-colors">Videos</Link>
-          <Link href="/blogs" className="hover:text-white transition-colors">Blogs</Link>
+          <Link href="/blogs" className="hover:text-white transition-colors">Articles</Link>
 
           {/* Hover Expandable Search Form (NOW CONNECTED!) */}
           <form onSubmit={handleSearch} className="group flex items-center bg-transparent hover:bg-black/50 rounded-full transition-all duration-500 border border-transparent hover:border-white/20 overflow-hidden">
@@ -48,10 +48,22 @@ export default function Navbar() {
             </button>
           </form>
 
-          {/* Big CTA Button */}
-          <Link href="/share" className="bg-white text-red-600 px-6 py-2.5 rounded-full font-bold hover:bg-black transition-colors shadow-[0_0_15px_rgba(220,38,38,0.4)]">
-            Share Your Story
-          </Link>
+         {/* Big CTA Button */}
+          <Link 
+  href="/share" 
+  className="
+    group relative inline-flex items-center justify-center
+    px-6 py-2.5 rounded-full font-bold text-sm tracking-wide
+    bg-white text-red-600
+    transition-all duration-300 ease-out
+    hover:bg-black hover:text-red-500 hover:scale-105
+    hover:shadow-[0_0_25px_rgba(168,85,247,0.6)]
+    active:scale-95
+    border border-transparent hover:border-purple-500/50
+  "
+>
+  Share Your Story
+</Link>
 
 
         </div>

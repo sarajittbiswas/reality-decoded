@@ -86,43 +86,62 @@ export default async function SearchPage({
         </div>
 
         {/* Results List */}
-        {combinedResults.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6">
-            {combinedResults.map((result: any, index: number) => (
-              <Link href={result.url} key={`${result.id}-${index}`} className="block group">
-                <article className="p-6 rounded-xl bg-[#141414] border border-white/5 transition-all duration-300 group-hover:bg-[#1a1a1a] group-hover:border-red-500/30 flex items-start gap-4">
-                  
-                  {/* Dynamic Icon based on content type */}
-                  <div className="mt-1 shrink-0">
-                    {result.type === 'video' && (
-                      <div className="w-10 h-10 rounded-full bg-red-600/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                      </div>
-                    )}
-                    {result.type === 'page' && (
-                      <div className="w-10 h-10 rounded-full bg-blue-600/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      </div>
-                    )}
-                    {result.type === 'blog' && (
-                      <div className="w-10 h-10 rounded-full bg-green-600/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2 2 0 00-2-2h-2"></path></svg>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{result.type}</span>
-                    </div>
-                    <h3 className="font-bold text-xl mb-2 text-white group-hover:text-red-500 transition-colors">{result.title}</h3>
-                    <p className="text-sm text-gray-400 line-clamp-2">{result.description}</p>
-                  </div>
-                </article>
-              </Link>
-            ))}
+{combinedResults.length > 0 ? (
+  <div className="grid grid-cols-1 gap-6">
+    {combinedResults.map((result: any, index: number) => (
+      <Link href={result.url} key={`${result.id}-${index}`} className="block group">
+        <article className="
+          relative p-6 rounded-2xl 
+          bg-[#111111]/80 backdrop-blur-xl 
+          border border-white/5 
+          shadow-[0_8px_30px_rgb(0,0,0,0.5)] 
+          transition-all duration-500 ease-out
+          hover:-translate-y-1 hover:border-purple-500/30 hover:bg-[#161616]/90
+          hover:shadow-[0_8px_30px_rgba(168,85,247,0.25)]
+          flex items-start gap-4 overflow-hidden
+        ">
+          {/* The top glass edge: changes to purple on hover! */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 group-hover:via-purple-500/50 to-transparent transition-colors duration-500"></div>
+          
+          {/* Dynamic Icon based on content type */}
+          <div className="mt-1 shrink-0 z-10">
+            {result.type === 'video' && (
+              <div className="w-10 h-10 rounded-full bg-purple-600/10 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            )}
+            {result.type === 'page' && (
+              <div className="w-10 h-10 rounded-full bg-blue-600/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+            )}
+            {result.type === 'blog' && (
+              <div className="w-10 h-10 rounded-full bg-green-600/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2 2 0 00-2-2h-2"></path></svg>
+              </div>
+            )}
           </div>
-        ) : (
+
+          <div className="z-10">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{result.type}</span>
+            </div>
+            
+            {/* THIS IS THE FIX: DYNAMIC TITLE */}
+            <h3 className="font-bold text-xl mb-2 text-white group-hover:text-purple-400 transition-colors duration-300">
+              {result.title}
+            </h3>
+            
+            {/* THIS IS THE FIX: DYNAMIC DESCRIPTION */}
+            <p className="text-sm text-gray-400 line-clamp-2">
+              {result.description}
+            </p>
+          </div>
+        </article>
+      </Link>
+    ))}
+  </div>
+) : (
           query && (
             <div className="text-center py-20 bg-[#141414] rounded-2xl border border-white/5">
               <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>

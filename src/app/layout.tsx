@@ -1,6 +1,11 @@
+import { Inter, Space_Grotesk } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import type { Metadata } from 'next';
 import './globals.css';
+
+// Configure the fonts
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space' });
 
 export const metadata: Metadata = {
   title: 'Reality Decoded | Uncover the Truth',
