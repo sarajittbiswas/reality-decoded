@@ -138,8 +138,8 @@ export default function ContactPage() {
                     <a href="/public-key.asc" download className="text-red-500 text-sm font-bold hover:text-red-400 transition-colors flex items-center gap-1">
                       Download PGP Key <span>&darr;</span>
                     </a>
-                    <a href="mailto:secure@realitydecoded.com" className="text-gray-500 text-sm font-bold hover:text-white transition-colors">
-                      secure@realitydecoded.com
+                    <a href="mailto:admin@realitydecoded.in" className="text-gray-500 text-sm font-bold hover:text-white transition-colors">
+                      admin@realitydecoded.in
                     </a>
                   </div>
                 </div>
@@ -158,8 +158,12 @@ export default function ContactPage() {
                   <p className="text-gray-400 text-sm leading-relaxed mb-4">
                     Questions about our investigations, feedback on recent videos, or ideas for future stories.
                   </p>
-                  <a href="mailto:info@realitydecoded.com" className="text-purple-400 text-sm font-bold hover:text-purple-300 transition-colors">
-                    info@realitydecoded.com
+                  <a href="mailto:info@realitydecoded.in" className="text-purple-400 text-sm font-bold hover:text-purple-300 transition-colors">
+                    info@realitydecoded.in
+                  </a>
+                  <br></br>
+                  <a href="mailto:hello@realitydecoded.in" className="text-purple-400 text-sm font-bold hover:text-purple-300 transition-colors">
+                    hello@realitydecoded.in
                   </a>
                 </div>
               </div>
@@ -177,8 +181,8 @@ export default function ContactPage() {
                   <p className="text-gray-400 text-sm leading-relaxed mb-4">
                     For interview requests, media syndication, or collaboration with other creators.
                   </p>
-                  <a href="mailto:press@realitydecoded.com" className="text-blue-400 text-sm font-bold hover:text-blue-300 transition-colors">
-                    press@realitydecoded.com
+                  <a href="mailto:business@realitydecoded.in" className="text-blue-400 text-sm font-bold hover:text-blue-300 transition-colors">
+                    business@realitydecoded.in
                   </a>
                 </div>
               </div>
