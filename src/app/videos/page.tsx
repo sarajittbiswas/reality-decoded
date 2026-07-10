@@ -1,6 +1,17 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { Space_Grotesk } from 'next/font/google';
 
+function getYouTubeID(url: string) {
+  if (!url) return null;
+  // This just grabs the part after "v=" or the last part of the URL. Simple and safe.
+  try {
+    const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+    return videoId;
+  } catch (e) {
+    return null;
+  }
+}
+
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export const runtime = 'edge';
