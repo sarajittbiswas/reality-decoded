@@ -69,6 +69,11 @@ export default async function WatchPage({ params }: { params: Promise<{ id: stri
     notFound();
   }
 
+  // NEW: Fetch 3 related transmissions, excluding the current one
+  const { results: relatedVideos } = await db.prepare(
+    'SELECT * FROM videos WHERE id != ? ORDER BY created_at DESC LIMIT 3'
+  ).bind(videoId).all();
+
   const ytId = getSafeYouTubeId(video.url);
   const ogImage = ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : 'https://realitydecoded.in/yt_img.png';
 
@@ -140,10 +145,60 @@ export default async function WatchPage({ params }: { params: Promise<{ id: stri
           <Interactions id={`video-${video.id}`} title={video.title} />
         </div>
 
+        {/* Back Button */}
         <a href="/videos" className="inline-flex items-center gap-3 text-purple-400 hover:text-purple-300 transition-colors font-mono font-bold uppercase tracking-widest text-sm group">
           <span className="transform group-hover:-translate-x-1 transition-transform">&larr;</span> 
           Back to Archives
         </a>
+
+        {/* NEW: RELATED TRANSMISSIONS BLOCK */}
+        {relatedVideos.length > 0 && (
+          <div className="mt-20 border-t border-white/5 pt-12 relative z-10">
+            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-white uppercase mb-8 flex items-center gap-3`}>
+              <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse shadow-[0_0_10px_#a855f7]"></span>
+              Related Transmissions
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {relatedVideos.map((related: any) => {
+                const relYtId = getSafeYouTubeId(related.url);
+                return (
+                  <a href={`/watch/${related.id}`} key={related.id} className="group block">
+                    <div className="relative aspect-video rounded-xl overflow-hidden bg-black mb-4 border border-white/5 group-hover:border-purple-500/50 transition-colors shadow-lg">
+                      
+                      {/* Thumbnail */}
+                      {relYtId ? (
+                        <img 
+                          src={`https://img.youtube.com/vi/${relYtId}/maxresdefault.jpg`} 
+                          alt={related.title} 
+                          className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out" 
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black"></div>
+                      )}
+                      
+                      {/* Play Hover Effect */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                         <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center pl-1 border border-white/20 group-hover:scale-110 transition-transform">
+                           <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                         </div>
+                      </div>
+                    </div>
+                    
+                    {/* Title & Tag */}
+                    <span className="text-[10px] font-mono text-purple-400 uppercase tracking-widest mb-1.5 block">
+                      {related.category || 'Declassified'}
+                    </span>
+                    <h4 className="font-bold text-gray-200 group-hover:text-white transition-colors line-clamp-2 text-sm md:text-base leading-snug">
+                      {related.title}
+                    </h4>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
       </div>
     </main>
   );
