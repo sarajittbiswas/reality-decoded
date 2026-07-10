@@ -7,11 +7,43 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space' });
 
+
 export const metadata: Metadata = {
-  title: 'Reality Decoded | Uncover the Truth',
-  description: 'Unedited reality, authentic stories, and investigations that matter.',
-  icons: {
-    icon: '/final_no_bg.png', // Change this to your actual logo file name!
+  // metadataBase is required for Next.js to auto-generate correct Canonical URLs
+  metadataBase: new URL('https://realitydecoded.in'),
+  
+  title: {
+    default: 'Reality Decoded | Uncover the Truth',
+    template: '%s | Reality Decoded', // If a page sets a title of "Videos", it becomes "Videos | Reality Decoded"
+  },
+  description: 'An independent intelligence syndicate delivering high-fidelity, cinematic investigations into technology, society, and hidden systems.',
+  
+  alternates: {
+    canonical: '/', // Sets the default canonical URL to your root domain
+  },
+  
+  openGraph: {
+    title: 'Reality Decoded | Intelligence Syndicate',
+    description: 'We don\'t just report. We decode. Access our latest investigative transmissions.',
+    url: 'https://realitydecoded.in',
+    siteName: 'Reality Decoded',
+    images: [
+      {
+        url: '/yt_img.png', // Your fallback global OG Image
+        width: 1200,
+        height: 630,
+        alt: 'Reality Decoded Broadcast Network',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Reality Decoded',
+    description: 'Independent investigations and unedited reality.',
+    images: ['/yt_img.png'], 
   },
 };
 
