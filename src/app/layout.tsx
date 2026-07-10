@@ -18,6 +18,12 @@ export const metadata: Metadata = {
   },
   description: 'An independent intelligence syndicate delivering high-fidelity, cinematic investigations into technology, society, and hidden systems.',
   
+  // Favicon & Apple Touch Icon (for iOS devices)
+  icons: {
+    icon: '/final_no_bg.png', //favicon for browsers
+    apple: '/final_01.png', // Fallback for Apple devices
+  },
+
   alternates: {
     canonical: '/', // Sets the default canonical URL to your root domain
   },
