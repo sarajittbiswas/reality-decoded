@@ -2,6 +2,8 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 import Link from 'next/link';
 import { Space_Grotesk } from 'next/font/google';
 
+
+
 // Initialize the premium font
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
