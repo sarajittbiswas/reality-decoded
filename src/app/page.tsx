@@ -1,7 +1,7 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import Link from 'next/link';
 import { Space_Grotesk } from 'next/font/google';
-
+import Newsletter from '@/components/Newsletter';
 
 
 // Initialize the premium font
@@ -116,6 +116,33 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* 2. SYNDICATE REACH (SOCIAL PROOF) */}
+      <section className="relative z-20 py-16 bg-[#050505] border-y border-white/5">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[
+              { num: '500K+', label: 'YouTube Subscribers', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
+              { num: '20K+', label: 'LinkedIn Network', icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' },
+              { num: '1.2M', label: 'Monthly Readers', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+              { num: '42', label: 'Countries Reached', icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
+            ].map((stat, i) => (
+              <div key={i} className="group relative bg-[#0a0a0a] border border-white/5 rounded-2xl p-8 hover:bg-[#111] transition-all duration-500 overflow-hidden hover:-translate-y-1">
+                {/* Background Ambient Glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-purple-500/0 to-purple-500/10 group-hover:to-purple-500/20 transition-all duration-500"></div>
+                {/* Animated Bottom Line */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-purple-500 group-hover:w-full transition-all duration-500 ease-out shadow-[0_0_10px_#a855f7]"></div>
+                
+                <svg className="w-8 h-8 text-purple-500/50 group-hover:text-purple-400 mb-4 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d={stat.icon} /></svg>
+                <h3 className={`${spaceGrotesk.className} text-4xl font-black text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-purple-400 transition-all duration-300`}>
+                  {stat.num}
+                </h3>
+                <p className="text-xs font-mono tracking-widest text-gray-500 uppercase mt-2 group-hover:text-gray-400 transition-colors">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      
       {/* 2. LATEST VIDEOS SECTION - MOBILE OPTIMIZED */}
       <section id="videos" className="bg-[#0a0a0a] py-32 relative scroll-reveal">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -163,6 +190,63 @@ export default async function Home() {
                 </article>
               </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* THE MISSION (FUTURISTIC RADAR) */}
+      <section className="bg-[#111] py-32 border-y border-white/5 relative overflow-hidden">
+        {/* CSS for the Radar Sweep */}
+        <style>{`
+          @keyframes radar-scan {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .radar-sweep {
+            background: conic-gradient(from 0deg, transparent 70%, rgba(168, 85, 247, 0.7) 100%);
+            animation: radar-scan 3s linear infinite;
+          }
+        `}</style>
+        
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[50%] h-[100%] bg-purple-900/10 blur-[150px] pointer-events-none"></div>
+        <div className="max-w-7xl mx-auto px-6 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <h2 className={`${spaceGrotesk.className} text-4xl md:text-5xl font-extrabold text-white uppercase mb-6`}>
+              We don't just report. <br/><span className="text-purple-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">We decode.</span>
+            </h2>
+            <p className="text-gray-400 text-lg leading-relaxed mb-8">
+              In an era of algorithmic echo chambers and surface-level headlines, Reality Decoded operates as an independent intelligence syndicate. We dig through the noise to bring you high-fidelity, cinematic investigations into technology, society, and the systems that govern our lives.
+            </p>
+            <div className="flex gap-4">
+               <div className="w-1 h-12 bg-purple-500 rounded-full shadow-[0_0_10px_#a855f7]"></div>
+               <p className="text-sm text-gray-500 font-mono italic">"The truth is rarely pure and never simple. We exist for the complex."</p>
+            </div>
+          </div>
+          
+          {/* Futuristic Radar Element */}
+          <div className="relative aspect-square md:aspect-video lg:aspect-square rounded-3xl border border-white/5 bg-[#0a0a0a] shadow-2xl overflow-hidden flex items-center justify-center group hover:shadow-[0_0_50px_rgba(168,85,247,0.2)] hover:border-purple-500/30 transition-all duration-700">
+             {/* Tech Grid Background */}
+             <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+             
+             {/* Radar Screen */}
+             <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full border border-purple-500/30 flex items-center justify-center overflow-hidden bg-black/50">
+                {/* Concentric UI Circles */}
+                <div className="absolute inset-4 rounded-full border border-purple-500/20"></div>
+                <div className="absolute inset-10 rounded-full border border-purple-500/20 shadow-[inset_0_0_20px_rgba(168,85,247,0.1)]"></div>
+                <div className="absolute inset-16 rounded-full border border-white/5 border-dashed"></div>
+                {/* Crosshairs */}
+                <div className="absolute inset-x-0 top-1/2 h-px bg-purple-500/40"></div>
+                <div className="absolute inset-y-0 left-1/2 w-px bg-purple-500/40"></div>
+                {/* The Scanning Sweep */}
+                <div className="absolute inset-0 rounded-full radar-sweep origin-center"></div>
+                {/* Detected Target (Blip) */}
+                <div className="absolute top-[30%] left-[65%] w-2 h-2 bg-red-500 rounded-full shadow-[0_0_10px_red] animate-ping"></div>
+             </div>
+             
+             {/* Glowing Active Pill */}
+             <div className="absolute text-purple-400 font-mono text-xs tracking-[0.3em] uppercase bg-black/80 backdrop-blur-md px-6 py-2 border border-purple-500/40 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.3)] group-hover:shadow-[0_0_30px_rgba(168,85,247,0.8)] group-hover:border-purple-400 group-hover:text-purple-300 transition-all duration-300">
+               System Active
+             </div>
           </div>
         </div>
       </section>
@@ -228,6 +312,9 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <Newsletter/>
+      
     </main>
   );
 }
