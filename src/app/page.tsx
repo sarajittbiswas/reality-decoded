@@ -11,10 +11,11 @@ export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  // Pull database videos
+  // Enforce strict chronological order: Newest first, limit to 3.
   const db = (getRequestContext().env as any).reality_decoded_db;
-  const { results } = await db.prepare('SELECT * FROM videos').all();
-
+  const { results: latestVideos } = await db.prepare(
+    'SELECT * FROM videos ORDER BY created_at DESC LIMIT 3'
+  ).all();
   return (
     <main className="w-full bg-[#0a0a0a] text-white overflow-hidden">
       
@@ -156,19 +157,18 @@ export default async function Home() {
           
           {/* 6-Card Grid (3 per row) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* We map a custom array that interleaves 3 Videos and 3 Blogs */}
             {[
-              // 1. VIDEO
-              results[0] ? { ...results[0], type: 'video' } : null,
-              // 2. BLOG
+              // 1. NEWEST VIDEO
+              latestVideos[0] ? { ...latestVideos[0], type: 'video' } : null,
+              // 2. BLOG 1
               { id: 'phantom-networks', title: 'Phantom Networks: The Invisible ISP in Your City', description: 'Our field team detected over 40 unauthorized Stingray devices masking themselves as standard cell towers...', category: 'Investigation', type: 'blog', image: 'https://images.unsplash.com/photo-1614064010834-58e1c68b6b0b?q=80&w=1000&auto=format&fit=crop' },
-              // 3. VIDEO
-              results[1] ? { ...results[1], type: 'video' } : null,
-              // 4. BLOG
+              // 3. 2ND NEWEST VIDEO
+              latestVideos[1] ? { ...latestVideos[1], type: 'video' } : null,
+              // 4. BLOG 2
               { id: 'corporate-shell-games', title: 'Corporate Shell Games: Tracing the Offshore Billions', description: 'We recently acquired 4,000 pages of leaked customs manifests tracing hardware through neutral ports...', category: 'Deep Dive', type: 'blog', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=1000&auto=format&fit=crop' },
-              // 5. VIDEO
-              results[2] ? { ...results[2], type: 'video' } : null,
-              // 6. BLOG
+              // 5. 3RD NEWEST VIDEO
+              latestVideos[2] ? { ...latestVideos[2], type: 'video' } : null,
+              // 6. BLOG 3
               { id: 'zero-day-economy', title: 'The Zero-Day Economy: Who Profits from Insecurity', description: 'Traditionally, hackers sold these on the dark web. Today, the biggest buyers are legitimate corporations...', category: 'Deep Dive', type: 'blog', image: 'https://images.unsplash.com/photo-1563206767-5b18f218e8de?q=80&w=1000&auto=format&fit=crop' }
             ].filter(Boolean).map((item: any, idx: number) => {
               
@@ -181,18 +181,15 @@ export default async function Home() {
 
               return (
                 <Link href={targetUrl} key={`${item.type}-${item.id}-${idx}`} className="block group">
+                  {/* ... (The rest of your card HTML stays exactly the same!) ... */}
                   <article className="relative rounded-2xl overflow-hidden h-full flex flex-col bg-[#111111]/80 backdrop-blur-xl border border-white/5 transition-all duration-500 ease-out hover:-translate-y-2 hover:bg-[#161616]/90 hover:border-purple-500/50 shadow-[0_5px_20px_rgba(168,85,247,0.05)] hover:shadow-[0_10px_40px_rgba(168,85,247,0.2)]">
                     
-                    {/* Top Edge Glow */}
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 group-hover:via-purple-500/50 to-transparent transition-colors duration-500 z-10"></div>
                     
-                    {/* Thumbnail Block */}
                     <div className="aspect-video bg-black overflow-hidden relative border-b border-white/5">
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent z-10 opacity-60"></div>
-                      
                       <img src={imageUrl} alt={item.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out" />
                       
-                      {/* Play Button (Only shows if it's a video) */}
                       {isVideo && (
                         <div className="absolute inset-0 z-20 flex items-center justify-center bg-purple-900/10 opacity-0 group-hover:opacity-100 transition-all duration-300">
                           <div className="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center pl-1 shadow-[0_0_20px_rgba(168,85,247,0.5)] group-hover:scale-110 group-hover:bg-purple-600 transition-all duration-300">
@@ -202,7 +199,6 @@ export default async function Home() {
                       )}
                     </div>
                     
-                    {/* Content Block */}
                     <div className="p-6 flex-grow flex flex-col">
                       <div className="flex items-center gap-2 mb-3">
                         <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded border ${isVideo ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
