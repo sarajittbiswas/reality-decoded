@@ -98,10 +98,11 @@ export default function RootLayout({
               </h4>
               <ul className="space-y-3">
                 {[
-                  { name: 'Our Team', link: '/team' },
                   { name: 'About Us', link: '/about' },
                   { name: 'Contact Us', link: '/contact' },
-                  { name: 'Blog / Field Reports', link: '/blogs' }
+                  { name: 'Our Team', link: '/team' },
+                  { name: 'Blog / Field Reports', link: '/blogs' },
+                  { name: 'Brands/Press Connect', link: '/press' }
                 ].map((item) => (
                   <li key={item.name}>
                     <a href={item.link} className="text-gray-400 hover:text-white flex items-center gap-2 group transition-colors text-sm">
@@ -172,8 +173,26 @@ rel="noopener noreferrer" className="w-10 h-10 rounded-xl bg-[#111] border borde
                 </a>
                 
               </div>
+              <br></br>
+{/* COLUMN 4: Social Network */}
+            <div>
+              <h4 className="text-white font-bold mb-6 uppercase tracking-widest text-sm flex items-center gap-2">
+               
+              </h4>
+              
+              <br></br>
+              {/* NEW: Glowing/Animated Press CTA Button */}
+              <a 
+                href="/press" 
+                className="flex items-center justify-center gap-2 w-full bg-purple-600/10 border border-purple-500/30 text-purple-400 rounded-xl py-3 px-4 text-xs font-bold uppercase tracking-widest transition-all duration-500 hover:text-white hover:border-purple-400 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <span className="text-xs">⚡</span> Media & Press Access
+              </a>
             </div>
-            
+
+
+            </div>
+
           </div>
 
           {/* Bottom Bar: Copyright & Status */}
