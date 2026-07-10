@@ -143,53 +143,89 @@ export default async function Home() {
         </div>
       </section>
       
-      {/* 2. LATEST VIDEOS SECTION - MOBILE OPTIMIZED */}
-      <section id="videos" className="bg-[#0a0a0a] py-32 relative scroll-reveal">
+      {/* 3. LATEST INVESTIGATIONS (MIXED GRID) */}
+      <section id="investigations" className="bg-[#0a0a0a] py-32 relative scroll-reveal">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
-          
-          <div className="flex items-center justify-between mb-12">
-            <h2 className="text-4xl font-extrabold text-white">Latest Investigations</h2>
-            <Link href="/videos" className="text-purple-500 font-bold hover:text-purple-400 transition-colors flex items-center gap-1 group">
-              View All 
-              <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-4">
+            <h2 className={`${spaceGrotesk.className} text-4xl font-extrabold text-white `}>Latest Investigations</h2>
+            {/* VIEW ALL BUTTON NOW GOES TO /archives */}
+            <Link href="/archives" className="text-purple-500 font-bold hover:text-purple-400 transition-colors flex items-center gap-2 group text-sm uppercase tracking-widest bg-purple-500/10 px-4 py-2 rounded-lg border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)] hover:shadow-[0_0_25px_rgba(168,85,247,0.4)]">
+              Open Master Archive <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {results.map((video: any) => (
-              <Link href={`/watch/${video.id}`} key={video.id} className="block group">
-                <article className="
-                  relative rounded-2xl overflow-hidden h-full flex flex-col
-                  bg-[#111111]/80 backdrop-blur-xl 
-                  border border-purple-500/30 md:border-white/5 
-                  transition-all duration-500 ease-out
-                  md:group-hover:-translate-y-2 md:group-hover:bg-[#161616]/90 md:group-hover:border-purple-500/30
-                  shadow-[0_5px_20px_rgba(168,85,247,0.1)] md:shadow-none md:group-hover:shadow-[0_10px_40px_rgba(168,85,247,0.2)]
-                ">
-                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-500/50 md:via-white/10 md:group-hover:via-purple-500/50 to-transparent transition-colors duration-500 z-10"></div>
-                  
-                  <div className="aspect-video bg-black overflow-hidden relative border-b border-white/5">
-                    <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop" alt={video.title} className="w-full h-full object-cover transition-transform duration-700 md:group-hover:scale-105 opacity-90 md:opacity-80 md:group-hover:opacity-100" />
+          {/* 6-Card Grid (3 per row) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* We map a custom array that interleaves 3 Videos and 3 Blogs */}
+            {[
+              // 1. VIDEO
+              results[0] ? { ...results[0], type: 'video' } : null,
+              // 2. BLOG
+              { id: 'phantom-networks', title: 'Phantom Networks: The Invisible ISP in Your City', description: 'Our field team detected over 40 unauthorized Stingray devices masking themselves as standard cell towers...', category: 'Investigation', type: 'blog', image: 'https://images.unsplash.com/photo-1614064010834-58e1c68b6b0b?q=80&w=1000&auto=format&fit=crop' },
+              // 3. VIDEO
+              results[1] ? { ...results[1], type: 'video' } : null,
+              // 4. BLOG
+              { id: 'corporate-shell-games', title: 'Corporate Shell Games: Tracing the Offshore Billions', description: 'We recently acquired 4,000 pages of leaked customs manifests tracing hardware through neutral ports...', category: 'Deep Dive', type: 'blog', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=1000&auto=format&fit=crop' },
+              // 5. VIDEO
+              results[2] ? { ...results[2], type: 'video' } : null,
+              // 6. BLOG
+              { id: 'zero-day-economy', title: 'The Zero-Day Economy: Who Profits from Insecurity', description: 'Traditionally, hackers sold these on the dark web. Today, the biggest buyers are legitimate corporations...', category: 'Deep Dive', type: 'blog', image: 'https://images.unsplash.com/photo-1563206767-5b18f218e8de?q=80&w=1000&auto=format&fit=crop' }
+            ].filter(Boolean).map((item: any, idx: number) => {
+              
+              const isVideo = item.type === 'video';
+              const targetUrl = isVideo ? `/watch/${item.id}` : `/blogs/${item.id}`;
+              
+              // Safe YouTube ID extractor just for the videos
+              const ytId = isVideo && item.url && item.url.includes('v=') ? item.url.split('v=')[1].split('&')[0] : null;
+              const imageUrl = isVideo && ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : item.image || '/yt_img.png';
+
+              return (
+                <Link href={targetUrl} key={`${item.type}-${item.id}-${idx}`} className="block group">
+                  <article className="relative rounded-2xl overflow-hidden h-full flex flex-col bg-[#111111]/80 backdrop-blur-xl border border-white/5 transition-all duration-500 ease-out hover:-translate-y-2 hover:bg-[#161616]/90 hover:border-purple-500/50 shadow-[0_5px_20px_rgba(168,85,247,0.05)] hover:shadow-[0_10px_40px_rgba(168,85,247,0.2)]">
                     
-                    {/* Play Button - Always visible on mobile, hover on desktop */}
-                    <div className="absolute inset-0 bg-purple-900/20 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-full flex items-center justify-center pl-1 shadow-[0_0_20px_rgba(255,255,255,0.5)] md:group-hover:scale-110 transition-transform duration-300">
-                        <svg className="w-6 h-6 md:w-8 md:h-8 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                      </div>
+                    {/* Top Edge Glow */}
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 group-hover:via-purple-500/50 to-transparent transition-colors duration-500 z-10"></div>
+                    
+                    {/* Thumbnail Block */}
+                    <div className="aspect-video bg-black overflow-hidden relative border-b border-white/5">
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent z-10 opacity-60"></div>
+                      
+                      <img src={imageUrl} alt={item.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out" />
+                      
+                      {/* Play Button (Only shows if it's a video) */}
+                      {isVideo && (
+                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-purple-900/10 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                          <div className="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center pl-1 shadow-[0_0_20px_rgba(168,85,247,0.5)] group-hover:scale-110 group-hover:bg-purple-600 transition-all duration-300">
+                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  
-                  <div className="p-6 flex-grow">
-                    <h3 className="font-bold text-xl mb-3 text-purple-300 md:text-white md:group-hover:text-purple-400 transition-colors duration-300">
-                      {video.title}
-                    </h3>
-                    <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed">
-                      {video.description}
-                    </p>
-                  </div>
-                </article>
-              </Link>
-            ))}
+                    
+                    {/* Content Block */}
+                    <div className="p-6 flex-grow flex flex-col">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded border ${isVideo ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                          {item.category || (isVideo ? 'Video' : 'Intel')}
+                        </span>
+                        {!isVideo && (
+                           <span className="flex items-center gap-1 text-[10px] text-gray-500 font-mono tracking-widest uppercase">
+                             <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> Text File
+                           </span>
+                        )}
+                      </div>
+                      
+                      <h3 className={`${spaceGrotesk.className} font-bold text-xl mb-3 text-gray-200 group-hover:text-white transition-colors duration-300 leading-snug`}>
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed mt-auto font-light">
+                        {item.description}
+                      </p>
+                    </div>
+                  </article>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
