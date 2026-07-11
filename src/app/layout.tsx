@@ -7,7 +7,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space' });
 
-
+export const runtime = 'edge';
 export const metadata: Metadata = {
   // metadataBase is required for Next.js to auto-generate correct Canonical URLs
   metadataBase: new URL('https://realitydecoded.in'),
