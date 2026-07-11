@@ -15,6 +15,8 @@
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
     "@opennextjs/cloudflare": "^1.19.9",
+    "@sanity/image-url": "^2.1.1",
+    "@sanity/vision": "^5.31.1",
     "@tiptap/extension-color": "^3.27.3",
     "@tiptap/extension-image": "^3.27.3",
     "@tiptap/extension-link": "^3.27.3",
@@ -28,8 +30,11 @@
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.24.0",
     "next": "15.5.2",
+    "next-sanity": "^13.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "sanity": "^5.31.1",
+    "styled-components": "^6.4.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

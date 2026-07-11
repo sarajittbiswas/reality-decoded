@@ -24,3 +24,19 @@ body {
 	color: var(--foreground);
 	font-family: Arial, Helvetica, sans-serif;
 }
+
+/* --- SYNDICATE CMS ARTICLE STYLES --- */
+.syndicate-prose { color: #d1d5db; font-size: 1.125rem; line-height: 1.8; font-weight: 300; }
+.syndicate-prose > * { margin-bottom: 1.5em; }
+.syndicate-prose p { padding-left: 1rem; border-left: 1px solid rgba(168,85,247,0.3); transition: border-color 0.3s; }
+.syndicate-prose p:hover { border-left-color: rgba(168,85,247,0.8); }
+.syndicate-prose h1, .syndicate-prose h2, .syndicate-prose h3 { font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif; font-weight: bold; color: white; border-left: none; padding-left: 0; margin-top: 2em; }
+.syndicate-prose h1 { font-size: 2.5em; line-height: 1.2; }
+.syndicate-prose h2 { font-size: 2em; }
+.syndicate-prose h3 { font-size: 1.5em; }
+.syndicate-prose a { color: #c084fc; text-decoration: underline; text-underline-offset: 4px; border-left: none; }
+.syndicate-prose ul { list-style-type: disc; padding-left: 2em; }
+.syndicate-prose ol { list-style-type: decimal; padding-left: 2em; }
+.syndicate-prose blockquote { border-left: 4px solid #a855f7; padding: 1rem 1.5rem; font-style: italic; background: rgba(168,85,247,0.05); border-radius: 0 0.5rem 0.5rem 0; }
+.syndicate-prose img { max-width: 100%; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.1); margin: 2rem 0; border-left: none; padding-left: 0; }
+.syndicate-prose iframe { width: 100%; aspect-ratio: 16 / 9; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.1); margin: 2rem 0; border-left: none; padding-left: 0; }
