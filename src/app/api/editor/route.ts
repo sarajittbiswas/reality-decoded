@@ -1,7 +1,6 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { NextResponse } from 'next/server';
 
-// Cloudflare loves this here, and Next.js won't crash because it's an API route!
 export const runtime = 'edge';
 
 export async function POST(request: Request) {
@@ -10,21 +9,30 @@ export async function POST(request: Request) {
     const db = (getRequestContext().env as any).reality_decoded_db;
     
     const slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    const author = "Syndicate Agent";
+    const author = "Syndicate Agent"; // Later we will tie this to the multi-author login!
 
     if (data.id) {
-      // Update existing draft
-      await db.prepare(
-        "UPDATE articles SET title = ?, category = ?, content = ?, status = ? WHERE id = ?"
-      ).bind(data.title, data.category, data.content, data.status, data.id).run();
+      // 🚨 UPDATE EXISTING ARTICLE (Now includes tags and updated_at)
+      
+      // If the frontend explicitly passed isUpdate, we log the updated_at timestamp.
+      // Otherwise, we just update the content (like a silent draft save).
+      if (data.isUpdate) {
+        await db.prepare(
+          "UPDATE articles SET title = ?, category = ?, tags = ?, content = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+        ).bind(data.title, data.category, data.tags || "", data.content, data.status, data.id).run();
+      } else {
+        await db.prepare(
+          "UPDATE articles SET title = ?, category = ?, tags = ?, content = ?, status = ? WHERE id = ?"
+        ).bind(data.title, data.category, data.tags || "", data.content, data.status, data.id).run();
+      }
       
       return NextResponse.json({ success: true, id: data.id });
     } else {
-      // Insert new draft
+      // 🚨 INSERT NEW ARTICLE (Now includes tags)
       const newId = crypto.randomUUID();
       await db.prepare(
-        "INSERT INTO articles (id, title, slug, category, content, author, status) VALUES (?, ?, ?, ?, ?, ?, ?)"
-      ).bind(newId, data.title, slug, data.category, data.content, author, data.status).run();
+        "INSERT INTO articles (id, title, slug, category, tags, content, author, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      ).bind(newId, data.title, slug, data.category, data.tags || "", data.content, author, data.status).run();
       
       return NextResponse.json({ success: true, id: newId });
     }
@@ -33,8 +41,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-
-// Add this below your existing POST function in src/app/api/editor/route.ts
 
 export async function GET(request: Request) {
   try {
