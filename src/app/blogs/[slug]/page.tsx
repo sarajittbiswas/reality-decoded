@@ -56,13 +56,18 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   const db = (getRequestContext().env as any).reality_decoded_db;
   
   // 1. Fetch the main article
-  const article = await db.prepare(
-    "SELECT * FROM articles WHERE slug = ? AND status = 'published'"
-  ).bind(slug).first();
+  // 🚨 FIXED QUERY: Joins the articles table with the agent table to get the avatar
+  const article = await db.prepare(`
+    SELECT articles.*, syndicate_agents.name as agent_name, syndicate_agents.avatar as agent_avatar
+    FROM articles 
+    LEFT JOIN syndicate_agents ON articles.agent_id = syndicate_agents.id
+    WHERE slug = ? AND status = 'published'
+  `).bind(slug).first();
 
-  if (!article) {
-    notFound();
-  }
+  if (!article) notFound();
+
+  // Determine if it's a clean team post or a user submission
+  const isTeamArticle = article.author === 'Syndicate Admin';
 
   // 2. Fetch 3 related articles (guaranteed to pull the 3 latest published blogs, excluding current)
   const { results: relatedArticles } = await db.prepare(
@@ -95,8 +100,22 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
             {article.title}
           </h1>
           
-          <div className="flex items-center justify-center gap-4 text-xs text-gray-500 font-mono uppercase tracking-widest">
-            <span className="text-purple-400 font-bold">By {article.author}</span>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500 font-mono uppercase tracking-widest">
+            
+            {/* 🚨 DYNAMIC AUTHOR DISPLAY */}
+            {article.agent_name ? (
+              <div className="flex items-center gap-2">
+                <img src={article.agent_avatar} alt="Agent Avatar" className="w-6 h-6 rounded-full border border-purple-500/50 shadow-[0_0_10px_purple]" />
+                <span className="text-purple-400 font-bold">
+                  {isTeamArticle 
+                    ? `By Syndicate Agent, ${article.agent_name}` 
+                    : `By ${article.author} • Modified by ${article.agent_name}`}
+                </span>
+              </div>
+            ) : (
+              <span className="text-purple-400 font-bold">By {article.author}</span>
+            )}
+
             <span>•</span>
             <span>{new Date(article.created_at).toLocaleDateString()}</span>
             <span>•</span>

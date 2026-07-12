@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -10,8 +10,8 @@ import LinkExtension from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Youtube from "@tiptap/extension-youtube";
 import TextAlign from "@tiptap/extension-text-align";
-import {TextStyle} from "@tiptap/extension-text-style";
-import {Color} from "@tiptap/extension-color";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
 import { Space_Grotesk } from "next/font/google";
 import { 
   Bold, Italic, Underline as UnderlineIcon, Strikethrough, 
@@ -24,16 +24,13 @@ import {
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] });
 
-// --- SANITIZATION HELPER ---
 const sanitizeTags = (raw: string) => {
   return raw.split(',').map(t => t.trim()).filter(Boolean).join(',');
 };
 
-// --- THE TOOLBAR ---
 const MenuBar = ({ editor, openModal }: { editor: any, openModal: (type: 'link' | 'image' | 'youtube') => void }) => {
   if (!editor) return null;
 
-  // 🚨 FIXED: These classes are now strictly enforced. 
   const btn = "p-2 rounded hover:bg-white/10 transition-colors text-gray-400 hover:text-white";
   const activeBtn = "p-2 rounded bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.8)] border border-purple-400 transition-all";
   const divider = "w-px h-6 bg-white/10 mx-2 self-center";
@@ -73,7 +70,6 @@ const MenuBar = ({ editor, openModal }: { editor: any, openModal: (type: 'link' 
       <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={editor.isActive('blockquote') ? activeBtn : btn}><Quote size={18} /></button>
       <div className={divider}></div>
       
-      {/* 🚨 FIXED: These now trigger the custom cinematic UI modal instead of the ugly browser prompt */}
       <button type="button" onClick={() => openModal('link')} className={editor.isActive('link') ? activeBtn : btn}><LinkIcon size={18} /></button>
       <button type="button" onClick={() => openModal('image')} className={btn}><ImageIcon size={18} /></button>
       <button type="button" onClick={() => openModal('youtube')} className={btn}><YoutubeIcon size={18} /></button>
@@ -81,7 +77,6 @@ const MenuBar = ({ editor, openModal }: { editor: any, openModal: (type: 'link' 
   );
 };
 
-// --- THE WORKBENCH MAIN COMPONENT ---
 function WriterWorkbench() {
   const searchParams = useSearchParams();
   const urlDraftId = searchParams.get('id');
@@ -93,12 +88,18 @@ function WriterWorkbench() {
   const [articleId, setArticleId] = useState<string | null>(null);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   
-  // 🚨 UI STATE: Force update for the toolbar, and state for the custom modals
+  const [agentId, setAgentId] = useState("");
+  const [agents, setAgents] = useState<{id: string, name: string}[]>([]);
+  const [isPublished, setIsPublished] = useState(false);
+
   const [, setForceUpdate] = useState(0);
   const [modal, setModal] = useState<{isOpen: boolean, type: 'link' | 'image' | 'youtube', url: string}>({ isOpen: false, type: 'link', url: '' });
 
+  // 🚨 DYNAMIC STORAGE KEY: Isolates edits on existing posts from your brand new blank drafts
+  const storageKey = urlDraftId ? `syndicate_draft_${urlDraftId}` : "syndicate_draft";
+
   const saveDraftLocally = (t: string, c: string, tags: string, content: string) => {
-    localStorage.setItem("syndicate_draft", JSON.stringify({ title: t, category: c, tags, content }));
+    localStorage.setItem(storageKey, JSON.stringify({ title: t, category: c, tags, content }));
   };
 
   const editor = useEditor({
@@ -115,13 +116,14 @@ function WriterWorkbench() {
     ],
     content: "", 
     onUpdate: ({ editor }) => saveDraftLocally(title, category, tags, editor.getHTML()),
-    // 🚨 FIXED: This forces React to re-render the toolbar the millisecond you click, drag, or type.
-    onTransaction: () => {
-      setForceUpdate(prev => prev + 1); 
-    }
+    onTransaction: () => setForceUpdate(prev => prev + 1)
   });
 
   useEffect(() => {
+    fetch('/api/agents')
+      .then(res => res.json())
+      .then(data => setAgents(data));
+
     if (urlDraftId) {
       setSaveStatus("Fetching from Mainframe...");
       fetch(`/api/editor?id=${urlDraftId}`)
@@ -132,7 +134,16 @@ function WriterWorkbench() {
             setCategory(data.article.category || "");
             setTags(data.article.tags || "");
             setArticleId(data.article.id);
-            if (editor && editor.isEmpty) {
+            
+            setAgentId(data.article.agent_id || "");
+            setIsPublished(data.article.status === 'published');
+
+            // If there's a local backup for THIS SPECIFIC file, use it. Otherwise, use DB content.
+            const saved = localStorage.getItem(storageKey);
+            if (saved && editor && editor.isEmpty) {
+              const { content: savedContent } = JSON.parse(saved);
+              editor.commands.setContent(savedContent || data.article.content);
+            } else if (editor && editor.isEmpty) {
               editor.commands.setContent(data.article.content);
             }
             setSaveStatus("Secure link established");
@@ -141,7 +152,8 @@ function WriterWorkbench() {
           }
         });
     } else {
-      const saved = localStorage.getItem("syndicate_draft");
+      // 🚨 BRAND NEW POST: Uses the standard "syndicate_draft" memory slot
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const { title: savedTitle, category: savedCategory, tags: savedTags, content: savedContent } = JSON.parse(saved);
         if (savedTitle) setTitle(savedTitle);
@@ -157,7 +169,7 @@ function WriterWorkbench() {
     fetch('/api/tags')
       .then(res => res.json())
       .then(data => setSuggestedTags(data));
-  }, [editor, urlDraftId]);
+  }, [editor, urlDraftId, storageKey]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
@@ -174,24 +186,17 @@ function WriterWorkbench() {
     if (editor) saveDraftLocally(title, category, e.target.value, editor.getHTML());
   };
 
-  // 🚨 MODAL LOGIC: Handle opening the cinematic popup
   const openModal = (type: 'link' | 'image' | 'youtube') => {
     let currentUrl = '';
-    if (type === 'link') {
-      currentUrl = editor?.getAttributes('link').href || '';
-    }
+    if (type === 'link') currentUrl = editor?.getAttributes('link').href || '';
     setModal({ isOpen: true, type, url: currentUrl });
   };
 
-  // 🚨 MODAL LOGIC: Handle submitting the cinematic popup
   const handleModalSubmit = () => {
     if (!editor) return;
     if (modal.type === 'link') {
-      if (modal.url === '') {
-        editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      } else {
-        editor.chain().focus().extendMarkRange('link').setLink({ href: modal.url }).run();
-      }
+      if (modal.url === '') editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      else editor.chain().focus().extendMarkRange('link').setLink({ href: modal.url }).run();
     } else if (modal.type === 'image') {
       if (modal.url) editor.chain().focus().setImage({ src: modal.url }).run();
     } else if (modal.type === 'youtube') {
@@ -200,14 +205,13 @@ function WriterWorkbench() {
     setModal({ ...modal, isOpen: false, url: '' });
   };
 
-  const handleServerAction = async (status: 'draft' | 'pending') => {
+  const handleServerAction = async (status: 'draft' | 'pending' | 'published') => {
     if (!editor || !title) {
       alert("A title is required to save to the mainframe.");
       return;
     }
 
     const cleanedTags = sanitizeTags(tags);
-    
     setSaveStatus(status === 'draft' ? "Encrypting to Server..." : "Transmitting to HQ...");
     
     try {
@@ -220,7 +224,8 @@ function WriterWorkbench() {
           category,
           tags: cleanedTags,
           content: editor.getHTML(),
-          status
+          status,
+          agent_id: agentId || null 
         })
       });
 
@@ -228,10 +233,16 @@ function WriterWorkbench() {
 
       if (result.success && result.id) {
         setArticleId(result.id); 
-        setSaveStatus(status === 'draft' ? "Draft secured in Mainframe" : "Transmitted to HQ Queue");
         
-        if (status === 'pending') {
-          localStorage.removeItem("syndicate_draft");
+        if (status === 'published') {
+           setSaveStatus("Live File Updated Successfully");
+        } else {
+           setSaveStatus(status === 'draft' ? "Draft secured in Mainframe" : "Transmitted to HQ Queue");
+        }
+        
+        // 🚨 REDIRECT FIX: Now redirects back to HQ if you click Submit OR Update Live File
+        if (status === 'pending' || status === 'published') {
+          localStorage.removeItem(storageKey);
           setTimeout(() => window.location.href = '/hq', 1500); 
         }
       } else {
@@ -241,14 +252,12 @@ function WriterWorkbench() {
     } catch (error) {
       console.error(error);
       setSaveStatus("Critical System Failure");
-      alert("Critical failure. The connection to the database was severed.");
     }
   };
 
   return (
     <main className="min-h-screen bg-[#050505] text-white pt-10 pb-20 px-6 font-mono relative">
       
-      {/* 🚨 THE CINEMATIC POPUP MODAL */}
       {modal.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
           <div className="bg-[#111] border border-purple-500/50 p-8 rounded-2xl shadow-[0_0_40px_rgba(168,85,247,0.3)] w-full max-w-lg relative animate-in fade-in zoom-in-95 duration-200">
@@ -302,26 +311,51 @@ function WriterWorkbench() {
           <input type="text" placeholder="ENTER TRANSMISSION TITLE..." value={title} onChange={handleTitleChange} className={`${spaceGrotesk.className} text-4xl bg-transparent border-b border-white/10 pb-4 outline-none focus:border-purple-500 transition-colors placeholder:text-gray-700 w-full uppercase`} />
           <input type="text" placeholder="CATEGORY" value={category} onChange={handleCategoryChange} className="bg-transparent border-b border-white/10 pb-4 outline-none focus:border-purple-500 transition-colors placeholder:text-gray-700 text-sm text-purple-400 uppercase tracking-widest w-full" />
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-400">Tags (comma separated)</label>
-            <input type="text" name="tags" value={tags} onChange={handleTagsChange} placeholder="e.g. ufo,conspiracy,hidden-truth" className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
-            {suggestedTags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                <span className="text-[10px] text-gray-600 uppercase tracking-widest mr-2 self-center">Suggested:</span>
-                {suggestedTags.map((tag) => (
-                  <button key={tag} type="button" onClick={() => {
-                      const current = tags.split(',').map(t => t.trim()).filter(Boolean);
-                      if (!current.includes(tag)) {
-                        const newTags = [...current, tag].join(',');
-                        setTags(newTags);
-                        saveDraftLocally(title, category, newTags, editor?.getHTML() || "");
-                      }
-                    }} className="text-[10px] bg-white/5 border border-white/10 hover:border-purple-500/50 text-gray-400 hover:text-purple-400 px-3 py-1 rounded-full transition-colors">
-                    {tag}
-                  </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-400">Tags (comma separated)</label>
+              <input type="text" name="tags" value={tags} onChange={handleTagsChange} placeholder="e.g. ufo,conspiracy" className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
+              
+              {/* 🚨 RESTORED: Suggested Tags UI */}
+              {suggestedTags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <span className="text-[10px] text-gray-600 uppercase tracking-widest mr-2 self-center">Suggested:</span>
+                  {suggestedTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        const current = tags.split(',').map(t => t.trim()).filter(Boolean);
+                        if (!current.includes(tag)) {
+                          const newTags = [...current, tag].join(',');
+                          setTags(newTags);
+                          saveDraftLocally(title, category, newTags, editor?.getHTML() || "");
+                        }
+                      }}
+                      className="text-[10px] bg-white/5 border border-white/10 hover:border-purple-500/50 text-gray-400 hover:text-purple-400 px-3 py-1 rounded-full transition-colors"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-400">Assigned Agent</label>
+              <select
+                value={agentId}
+                onChange={(e) => setAgentId(e.target.value)}
+                disabled={isPublished}
+                className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed appearance-none tracking-widest uppercase text-sm"
+              >
+                <option value="">-- UNASSIGNED --</option>
+                {agents.map(agent => (
+                  <option key={agent.id} value={agent.id}>{agent.name}</option>
                 ))}
-              </div>
-            )}
+              </select>
+              {isPublished && <span className="text-[10px] text-purple-400 tracking-widest uppercase">File Published: Agent assignment locked.</span>}
+            </div>
           </div>
 
           <div className="mt-4 relative">
@@ -333,9 +367,21 @@ function WriterWorkbench() {
 
           <div className="flex justify-end gap-4 mt-8">
             <Link href="/hq" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-purple-400 transition-colors uppercase tracking-widest font-bold"><ArrowLeft size={14} /> Return to HQ</Link>
-            <button onClick={() => { localStorage.removeItem("syndicate_draft"); window.location.href = '/hq/write'; }} className="px-6 py-3 rounded-lg text-xs tracking-widest uppercase border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors font-bold">Scrap Draft</button>
-            <button onClick={() => handleServerAction('draft')} className="px-6 py-3 rounded-lg text-xs tracking-widest uppercase border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 transition-colors font-bold">Save Server Draft</button>
-            <button onClick={() => handleServerAction('pending')} className="px-8 py-3 rounded-lg text-xs tracking-widest uppercase bg-purple-600 hover:bg-purple-500 text-white font-bold transition-colors shadow-[0_0_15px_rgba(168,85,247,0.4)]">Submit to HQ Queue</button>
+            
+            {isPublished ? (
+              <button 
+                onClick={() => handleServerAction('published')} 
+                className="px-8 py-3 rounded-lg text-xs tracking-widest uppercase bg-purple-600 hover:bg-purple-500 text-white font-bold transition-colors shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+              >
+                Update Live File
+              </button>
+            ) : (
+              <>
+                <button onClick={() => { localStorage.removeItem(storageKey); window.location.href = '/hq/write'; }} className="px-6 py-3 rounded-lg text-xs tracking-widest uppercase border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors font-bold">Scrap Draft</button>
+                <button onClick={() => handleServerAction('draft')} className="px-6 py-3 rounded-lg text-xs tracking-widest uppercase border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 transition-colors font-bold">Save Server Draft</button>
+                <button onClick={() => handleServerAction('pending')} className="px-8 py-3 rounded-lg text-xs tracking-widest uppercase bg-purple-600 hover:bg-purple-500 text-white font-bold transition-colors shadow-[0_0_15px_rgba(168,85,247,0.4)]">Submit to HQ Queue</button>
+              </>
+            )}
           </div>
         </div>
       </div>

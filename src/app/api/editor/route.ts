@@ -21,24 +21,32 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { id, title, category, tags, content, status } = await request.json();
+    const { id, title, category, tags, content, status, agent_id } = await request.json();
     const db = (getRequestContext().env as any).reality_decoded_db;
 
     if (id) {
-      // 🚨 UPDATE EXISTING POST (Now includes tags)
+      // 🚨 AUTHOR LOCK LOGIC: Fetch existing file
+      const existing: any = await db.prepare("SELECT status, agent_id FROM articles WHERE id = ?").bind(id).first();
+      
+      let finalAgentId = agent_id;
+
+      // If the file is already published, FORCE the agent_id to stay what it originally was
+      if (existing && existing.status === 'published') {
+        finalAgentId = existing.agent_id || agent_id; 
+      }
+
       await db.prepare(
-        "UPDATE articles SET title = ?, category = ?, tags = ?, content = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-      ).bind(title, category || 'INTEL', tags || '', content, status, id).run();
+        "UPDATE articles SET title = ?, category = ?, tags = ?, content = ?, status = ?, agent_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+      ).bind(title, category || 'INTEL', tags || '', content, status, finalAgentId || null, id).run();
       
       return NextResponse.json({ success: true, id });
     } else {
-      // 🚨 CREATE NEW POST (Now includes tags)
       const newId = crypto.randomUUID();
       const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
       
       await db.prepare(
-        "INSERT INTO articles (id, slug, title, category, tags, content, status, author) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-      ).bind(newId, slug, title, category || 'INTEL', tags || '', content, status, 'Syndicate Admin').run();
+        "INSERT INTO articles (id, slug, title, category, tags, content, status, author, agent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      ).bind(newId, slug, title, category || 'INTEL', tags || '', content, status, 'Syndicate Admin', agent_id || null).run();
 
       return NextResponse.json({ success: true, id: newId });
     }
