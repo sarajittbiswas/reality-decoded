@@ -2,6 +2,7 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
+import PurgeButton from '@/components/PurgeButton';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
@@ -134,6 +135,7 @@ export default async function CommandCenterHQ() {
                       Publish
                     </button>
                   </form>
+                  <PurgeButton id={draft.id} />
                 </div>
 
               </div>
@@ -215,6 +217,7 @@ export default async function CommandCenterHQ() {
                       <Link href={`/hq/write?id=${article.id}`} className="text-gray-400 hover:text-white text-[10px] font-bold uppercase tracking-widest border border-white/10 px-2 py-1 rounded bg-[#111]">
                         Edit Log
                       </Link>
+                      <PurgeButton id={article.id} />
                       <Link href={`/blogs/${article.slug}`} target="_blank" className="text-purple-400 hover:text-purple-300 text-xs font-bold">
                         View Live &rarr;
                       </Link>
