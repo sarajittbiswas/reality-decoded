@@ -42,6 +42,9 @@ export async function GET(request: Request) {
       const playlistRes = await fetch(playlistUrl);
       const playlistData = await playlistRes.json();
       
+      // 🚨 ADD THIS LINE to see exactly why YouTube is rejecting it:
+      console.log("YOUTUBE API RESPONSE:", JSON.stringify(playlistData, null, 2));
+
       if (playlistData.items) {
         allVideos = [...allVideos, ...playlistData.items];
       }
