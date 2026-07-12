@@ -2,15 +2,14 @@ import { NextResponse } from 'next/server';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
-export const dynamic = 'force-dynamic'; // Forces Next.js to run this live, never cached
 
 export async function GET() {
   try {
     const db = (getRequestContext().env as any).reality_decoded_db;
     
-    // Attempting to fetch the intel
+    // FETCH UPDATE: Removed 'excerpt' from the SQL query to stop the crash
     const { results: articles } = await db.prepare(
-      "SELECT title, slug, excerpt, created_at FROM articles WHERE status = 'published' ORDER BY created_at DESC LIMIT 20"
+      "SELECT title, slug, created_at FROM articles WHERE status = 'published' ORDER BY created_at DESC LIMIT 20"
     ).all();
 
     const baseUrl = 'https://realitydecoded.in';
@@ -28,7 +27,7 @@ export async function GET() {
         <item>
           <title><![CDATA[${article.title}]]></title>
           <link>${baseUrl}/blogs/${article.slug}</link>
-          <description><![CDATA[${article.excerpt || 'Encrypted Transmission'}]]></description>
+          <description><![CDATA[Classified intel transmission. Access the full report on the secure grid.]]></description>
           <pubDate>${article.created_at ? new Date(article.created_at).toUTCString() : new Date().toUTCString()}</pubDate>
           <guid>${baseUrl}/blogs/${article.slug}</guid>
         </item>`;
@@ -41,11 +40,11 @@ export async function GET() {
     return new NextResponse(xml, {
       headers: {
         'Content-Type': 'text/xml',
+        'Cache-Control': 's-maxage=3600, stale-while-revalidate', // Re-enabled caching for speed
       },
     });
 
   } catch (error: any) {
-    // ⚠️ DIAGNOSTIC OVERRIDE: Print the exact error to the browser screen
     return new NextResponse(`[SYS_LOG FAILURE]: ${error.message}`, {
       status: 500,
       headers: {
