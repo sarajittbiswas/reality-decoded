@@ -133,7 +133,7 @@ export default function PressPage() {
             <h3 className={`${spaceGrotesk.className} text-2xl font-bold mb-6 uppercase`}>Press Assets</h3>
             <p className="text-gray-400 mb-8 text-sm leading-relaxed">Download our official media kit.</p>
             <motion.a 
-              href="/press-kit.zip" 
+              href="/Press-Kit.zip" 
               download 
               animate={{ boxShadow: ["0 0 10px #fff", "0 0 25px #fff", "0 0 10px #fff"] }}
               transition={{ repeat: Infinity, duration: 2 }}
