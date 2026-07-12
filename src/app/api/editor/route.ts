@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
+// GET: Fetches existing article data
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -19,34 +20,34 @@ export async function GET(request: Request) {
   }
 }
 
+// POST: Handles creating or updating an article
 export async function POST(request: Request) {
   try {
-    const { id, title, category, tags, content, status, agent_id } = await request.json();
+    const { id, title, category, tags, content, status, agent_id, excerpt } = await request.json();
     const db = (getRequestContext().env as any).reality_decoded_db;
 
     if (id) {
-      // 🚨 AUTHOR LOCK LOGIC: Fetch existing file
+      // Logic: Update Existing
       const existing: any = await db.prepare("SELECT status, agent_id FROM articles WHERE id = ?").bind(id).first();
-      
       let finalAgentId = agent_id;
 
-      // If the file is already published, FORCE the agent_id to stay what it originally was
       if (existing && existing.status === 'published') {
         finalAgentId = existing.agent_id || agent_id; 
       }
 
       await db.prepare(
-        "UPDATE articles SET title = ?, category = ?, tags = ?, content = ?, status = ?, agent_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-      ).bind(title, category || 'INTEL', tags || '', content, status, finalAgentId || null, id).run();
+        "UPDATE articles SET title = ?, category = ?, tags = ?, content = ?, status = ?, agent_id = ?, excerpt = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+      ).bind(title, category || 'INTEL', tags || '', content, status, finalAgentId || null, excerpt || '', id).run();
       
       return NextResponse.json({ success: true, id });
     } else {
+      // Logic: Create New
       const newId = crypto.randomUUID();
       const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
       
       await db.prepare(
-        "INSERT INTO articles (id, slug, title, category, tags, content, status, author, agent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-      ).bind(newId, slug, title, category || 'INTEL', tags || '', content, status, 'Syndicate Admin', agent_id || null).run();
+        "INSERT INTO articles (id, slug, title, category, tags, content, status, author, agent_id, excerpt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      ).bind(newId, slug, title, category || 'INTEL', tags || '', content, status, 'Syndicate Admin', agent_id || null, excerpt || '').run();
 
       return NextResponse.json({ success: true, id: newId });
     }

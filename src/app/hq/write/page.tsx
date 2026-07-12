@@ -83,6 +83,7 @@ function WriterWorkbench() {
 
   const [tags, setTags] = useState('');
   const [title, setTitle] = useState("");
+  const [excerpt, setExcerpt] = useState('');
   const [category, setCategory] = useState("");
   const [saveStatus, setSaveStatus] = useState("Standing by...");
   const [articleId, setArticleId] = useState<string | null>(null);
@@ -134,6 +135,7 @@ function WriterWorkbench() {
             setCategory(data.article.category || "");
             setTags(data.article.tags || "");
             setArticleId(data.article.id);
+            setExcerpt(data.article.excerpt || '');
             
             setAgentId(data.article.agent_id || "");
             setIsPublished(data.article.status === 'published');
@@ -225,7 +227,8 @@ function WriterWorkbench() {
           tags: cleanedTags,
           content: editor.getHTML(),
           status,
-          agent_id: agentId || null 
+          agent_id: agentId || null, 
+          excerpt,
         })
       });
 
@@ -310,7 +313,16 @@ function WriterWorkbench() {
         <div className="flex flex-col gap-6">
           <input type="text" placeholder="ENTER TRANSMISSION TITLE..." value={title} onChange={handleTitleChange} className={`${spaceGrotesk.className} text-4xl bg-transparent border-b border-white/10 pb-4 outline-none focus:border-purple-500 transition-colors placeholder:text-gray-700 w-full uppercase`} />
           <input type="text" placeholder="CATEGORY" value={category} onChange={handleCategoryChange} className="bg-transparent border-b border-white/10 pb-4 outline-none focus:border-purple-500 transition-colors placeholder:text-gray-700 text-sm text-purple-400 uppercase tracking-widest w-full" />
-
+<div className="mb-6">
+  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Transmission Excerpt</label>
+  <textarea
+    value={excerpt}
+    onChange={(e) => setExcerpt(e.target.value)}
+    className="w-full bg-[#111] border border-white/10 p-3 text-white text-sm rounded-lg focus:border-purple-500 outline-none"
+    placeholder="Short summary for the archive cards..."
+    rows={2}
+  />
+</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-gray-400">Tags (comma separated)</label>
