@@ -14,10 +14,14 @@ export default function ShareStoryPage() {
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    fetch('/api/share')
-      .then(res => res.json())
-      .then(data => setRecentDrops(data))
-      .catch(() => console.log("Awaiting network..."));
+    // Replace your fetch block with this safe version
+fetch('/api/share')
+  .then(res => {
+    if (!res.ok) return []; // If server error, return empty array instead of crashing
+    return res.json();
+  })
+  .then(data => setRecentDrops(data))
+  .catch(() => setRecentDrops([])); // Silence errors
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

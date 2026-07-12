@@ -7,7 +7,6 @@ const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export const runtime = 'edge'; 
 
-// Server Action: Converts raw public intel into a polished draft for the editor
 async function approveIntelToEditor(formData: FormData) {
   'use server';
   const id = formData.get('id') as string;
@@ -17,12 +16,28 @@ async function approveIntelToEditor(formData: FormData) {
   const intel = await db.prepare("SELECT * FROM intel_submissions WHERE id = ?").bind(id).first();
   if (intel) {
     const newId = crypto.randomUUID();
-    const tempTitle = `Raw Intel: ${intel.name || 'Anonymous'}`;
-    const slug = newId.substring(0, 8);
     
+    // 1. Use the real subject, fallback to a name
+    const finalTitle = intel.subject || `Intel from ${intel.name || 'Anonymous'}`;
+    
+    // 2. Generate a clean slug from the REAL title
+    const slug = finalTitle.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+    
+    // 3. Insert using the real data
     await db.prepare(
       "INSERT INTO articles (id, title, slug, category, tags, content, author, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-    ).bind(newId, tempTitle, slug, 'INTEL', '', `<p>${intel.story}</p>`, intel.name || 'Anonymous', 'draft').run();
+    ).bind(
+      newId, 
+      finalTitle, 
+      slug, 
+      'INTEL', 
+      '', 
+      `<p>${intel.story}</p>`, 
+      intel.name || 'Anonymous', 
+      'draft'
+    ).run();
     
     await db.prepare("UPDATE intel_submissions SET status = 'processed' WHERE id = ?").bind(id).run();
   }

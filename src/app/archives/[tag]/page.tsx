@@ -5,11 +5,17 @@ import Link from 'next/link';
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 export const runtime = 'edge';
 
-export default async function TagArchivePage({ params }: { params: { tag: string } }) {
-  // 🚨 CLEAN: Remove underscore (if mistakenly added), trim, and decode URL
-  const decodedTag = decodeURIComponent(params.tag).replace(/^_/, '').trim();
-  
-  const db = (getRequestContext().env as any).reality_decoded_db;
+// 1. Update the type definition to Promise
+export default async function TagArchivePage({ params }: { params: Promise<{ tag: string }> }) {
+   
+   // 2. Await the params first
+   const { tag } = await params;
+
+   // 3. Now use the variable 'tag' directly
+   const decodedTag = decodeURIComponent(tag).replace(/^_/, '').trim();
+   
+   const db = (getRequestContext().env as any).reality_decoded_db;
+   // ... rest of your code
   
   // 🚨 QUERY: We force the comma padding so 'news' matches 'intel,news,ufo' perfectly
   const { results: articles } = await db.prepare(
