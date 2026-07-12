@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
-import { submitIntel } from '@/app/actions/intel';
-
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
@@ -39,38 +37,34 @@ export default function ShareStoryPage() {
 
     try {
       const emailEndpointUrl = process.env.NEXT_PUBLIC_GETFORM_ENDPOINT;
-      if (!emailEndpointUrl) {
-        throw new Error("Endpoint URL is missing. Did you restart the server?");
-      }
-
-      // 1. THE TRANSLATOR: FORMAT FOR FORMINIT
-      const forminitData = new FormData();
       
       const alias = formData.get('alias') as string;
       const email = formData.get('email') as string;
       const subject = formData.get('subject') as string;
       const story = formData.get('story') as string;
-      const postAsBlog = formData.get('postAsBlog') === 'on';
       
-      if (alias) forminitData.append('fi-sender-fullName', alias);
-      if (email) forminitData.append('fi-sender-email', email);
-      
-      forminitData.append('fi-text-subject', subject || 'No Subject');
-      forminitData.append('fi-text-story', story || 'No Story');
-      
-      const file = formData.get('attachment') as File;
-      if (file && file.size > 0) {
-        forminitData.append('fi-file-attachment', file); 
+      // 1. TRANSMIT TO EMAIL PROVIDER (If Endpoint Exists)
+      let emailProviderRequest = Promise.resolve({ ok: true });
+      if (emailEndpointUrl) {
+        const forminitData = new FormData();
+        if (alias) forminitData.append('fi-sender-fullName', alias);
+        if (email) forminitData.append('fi-sender-email', email);
+        forminitData.append('fi-text-subject', subject || 'No Subject');
+        forminitData.append('fi-text-story', story || 'No Story');
+        
+        const file = formData.get('attachment') as File;
+        if (file && file.size > 0) {
+          forminitData.append('fi-file-attachment', file); 
+        }
+        
+        emailProviderRequest = fetch(emailEndpointUrl, {
+          method: 'POST',
+          body: forminitData,
+          headers: { 'Accept': 'application/json' }
+        });
       }
 
-      // 2. TRANSMIT TO FORMINIT (Handles the file attachment securely & Email)
-      const emailProviderRequest = fetch(emailEndpointUrl, {
-        method: 'POST',
-        body: forminitData,
-        headers: { 'Accept': 'application/json' }
-      });
-
-      // 3. TRANSMIT TO DATABASE (Live UI Feed)
+      // 2. TRANSMIT TO DATABASE (Straight into intel_submissions)
       const dbData = { alias, email, subject, story };
       const dbRequest = fetch('/api/share', {
         method: 'POST',
@@ -78,37 +72,20 @@ export default function ShareStoryPage() {
         body: JSON.stringify(dbData)
       });
 
-      // 4. TRANSMIT TO CMS (Conditional based on Toggle)
-      let cmsRequest = Promise.resolve({ success: true, error: null }); 
-      
-      if (postAsBlog) {
-        const cmsData = new FormData();
-        cmsData.append('title', subject || 'Untitled Intelligence Drop');
-        cmsData.append('author', alias || 'Anonymous Contributor');
-        cmsData.append('description', story ? story.substring(0, 150) + '...' : 'Classified public drop.');
-        cmsData.append('content', story || '');
-        
-        cmsRequest = fetch('/api/intel', {
-           method: 'POST',
-           body: cmsData
-        }).then(res => res.json());
-      }
-
-      // Fire all applicable payloads simultaneously
-      const [emailRes, dbRes, cmsRes] = await Promise.all([
+      // Fire simultaneously
+      const [emailRes, dbRes] = await Promise.all([
         emailProviderRequest, 
-        dbRequest, 
-        cmsRequest
+        dbRequest
       ]);
 
-      if (!emailRes.ok) throw new Error("Forminit Email Transmission Failed.");
-      if (!dbRes.ok) throw new Error("Live Feed Save Failed.");
-      if (!cmsRes.success) throw new Error(cmsRes.error || "Command Center Injection Failed.");
+      if (!emailRes.ok) throw new Error("Email Transmission Failed.");
+      if (!dbRes.ok) throw new Error("Database rejected transmission.");
 
       setStatus('success');
       form.reset();
       setFileName(null);
       
+      // Refresh sidebar feed
       fetch('/api/share').then(res => res.json()).then(data => setRecentDrops(data));
       
       setTimeout(() => setStatus('idle'), 4000);
@@ -193,7 +170,7 @@ export default function ShareStoryPage() {
                     Declassify Your Story
                   </h4>
                   <p className="text-sm text-gray-400 leading-relaxed">
-                    Want the world to see your evidence? Toggle <strong className="text-white bg-white/10 px-1.5 py-0.5 rounded font-medium border border-white/10">Submit for publication</strong> below to transform your drop into a featured public article.
+                    Want the world to see your evidence? Toggle <strong className="text-white bg-white/10 px-1.5 py-0.5 rounded font-medium border border-white/10">Submit for publication</strong> below to route your drop to our Command Center for editorial review.
                   </p>
                 </div>
               </div>
@@ -250,7 +227,6 @@ export default function ShareStoryPage() {
                   )}
                 </div>
 
-{/* THE NEW FUTURISTIC TOGGLE SWITCH */}
                 <div className="flex items-center gap-4 mt-3 mb-2 relative z-30">
                   <label className="relative flex items-center cursor-pointer group/toggle">
                     <input 
@@ -261,25 +237,18 @@ export default function ShareStoryPage() {
                       className="sr-only" 
                     />
 
-                    {/* Futuristic Toggle Track - Controlled by React State */}
                     <div className={`relative w-14 h-7 rounded-full transition-all duration-500 overflow-hidden flex items-center ${isOptedIn ? 'bg-purple-900/50 border border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-[#050505] border border-gray-700 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)]'}`}>
-                      
-                      {/* Inner background glow */}
                       <div className={`absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-400 transition-opacity duration-500 ${isOptedIn ? 'opacity-40' : 'opacity-0'}`}></div>
-
-                      {/* The sliding physical dot */}
                       <div className={`absolute left-1 w-5 h-5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex items-center justify-center z-10 ${isOptedIn ? 'translate-x-7 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'bg-gray-500 shadow-[0_2px_5px_rgba(0,0,0,0.5)]'}`}>
                          <svg className={`w-3 h-3 text-purple-600 transition-opacity duration-300 delay-100 ${isOptedIn ? 'opacity-100' : 'opacity-0'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                       </div>
                     </div>
 
-                    {/* Glowing Text */}
                     <span className={`ml-4 text-sm font-semibold transition-all duration-300 select-none ${isOptedIn ? 'text-white drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : 'text-gray-400 group-hover/toggle:text-gray-200'}`}>
                       Submit for publication
                     </span>
                   </label>
 
-                  {/* Tooltip Icon & Popover (Unchanged) */}
                   <div className="group/tooltip relative flex items-center justify-center">
                     <div className="w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/30 flex items-center justify-center cursor-help shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse hover:animate-none hover:bg-purple-500/40 hover:border-purple-400 transition-all duration-300">
                       <span className="text-purple-400 text-xs font-bold leading-none block group-hover/tooltip:text-white">?</span>
@@ -288,12 +257,9 @@ export default function ShareStoryPage() {
                       <div className="relative p-4 bg-[#111111]/95 backdrop-blur-xl border border-purple-500/30 rounded-xl shadow-[0_10px_40px_rgba(168,85,247,0.4)] flex flex-col gap-2">
                         <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#111111]/95 border-b border-r border-purple-500/30 rotate-45"></div>
                         <p className="text-xs text-gray-300 leading-relaxed">
-                          <strong className="text-purple-400 block mb-1">Publishing Guidelines</strong>
-                          Checking this box submits your transmission to our editors. If the intel is verified, it will be published as a live public article.
+                          <strong className="text-purple-400 block mb-1">Command Center Routing</strong>
+                          Checking this box alerts our HQ. If the intel is verified, it will be moved into our editor, crafted, and published as a live public article.
                         </p>
-                        <Link href="/terms" target="_blank" className="text-xs text-purple-400 hover:text-purple-300 underline underline-offset-2 decoration-purple-500/50 hover:decoration-purple-400 transition-all">
-                          Read submission terms
-                        </Link>
                       </div>
                     </div>
                   </div>

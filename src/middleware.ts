@@ -2,16 +2,21 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/hq')) {
-    const adminCookie = request.cookies.get('admin_key')?.value;
+  // Check for the secure browser session cookie
+  const session = request.cookies.get('syndicate_session');
+  
+  // Protect all /hq routes EXCEPT the login page itself
+  if (request.nextUrl.pathname.startsWith('/hq') && !request.nextUrl.pathname.startsWith('/hq/login')) {
     
-    // DEBUG: This prints to your VS Code terminal
-    console.log("Middleware check: Found cookie value:", adminCookie);
-
-    if (adminCookie !== 'syndicate-secret-key') {
-      console.log("Middleware: Cookie invalid/missing. Redirecting to login.");
-      return NextResponse.redirect(new URL('/login', request.url));
+    // If cookie is missing or doesn't match your .env token, redirect to login
+    if (session?.value !== process.env.HQ_SESSION_TOKEN) {
+      return NextResponse.redirect(new URL('/hq/login', request.url));
     }
   }
+  
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: ['/hq/:path*'],
+};
