@@ -6,6 +6,7 @@ import Interactions from '@/components/Interactions';
 import ScrollProgress from '@/components/ScrollProgress';
 import Link from 'next/link';
 
+
 // 🚨 SEO METADATA GENERATOR (Updated for Next.js 15 Promise Params)
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   try {

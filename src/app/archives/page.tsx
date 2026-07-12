@@ -5,24 +5,40 @@ import ArchiveBoard from '@/components/ArchiveBoard';
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 export const runtime = 'edge';
 
-// We pull all the blogs here so we can pass them to the interactive board
-const MOCK_BLOGS_ARCHIVE = [
-  { id: 'phantom-networks', title: 'Phantom Networks: The Invisible ISP in Your City', description: 'Our field team detected over 40 unauthorized Stingray devices masking themselves as standard cell towers in major metropolitan areas.', category: 'Investigation', image: 'https://images.unsplash.com/photo-1614064010834-58e1c68b6b0b?q=80&w=1000&auto=format&fit=crop' },
-  { id: 'corporate-shell-games', title: 'Corporate Shell Games: Tracing the Offshore Billions', description: 'We recently acquired 4,000 pages of leaked customs manifests. This report breaks down exactly how modern tech giants are routing hardware through neutral ports.', category: 'Deep Dive', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=1000&auto=format&fit=crop' },
-  { id: 'zero-day-economy', title: 'The Zero-Day Economy: Who Profits from Insecurity', description: 'Traditionally, hackers sold these on the dark web. Today, the biggest buyers are legitimate corporations and government contractors.', category: 'Deep Dive', image: 'https://images.unsplash.com/photo-1563206767-5b18f218e8de?q=80&w=1000&auto=format&fit=crop' },
-  { id: 'digital-breadcrumbs', title: 'Following the Digital Breadcrumbs', description: 'Open-source intelligence is the backbone of Reality Decoded. By cross-referencing public flight logs with corporate tax filings...', category: 'Analysis', image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000&auto=format&fit=crop' },
-  { id: 'factory-conditions', title: 'Public Drop: The Factory Conditions They Aren’t Reporting', description: 'The following report was submitted via our secure transmission protocol and has been structurally verified by our team using logistical metadata.', category: 'Public Drop', image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=1000&auto=format&fit=crop' }
-];
+// Utility: Strip HTML for description preview
+const stripHtml = (html: string) => {
+  return html.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
+};
+
+// Utility: Get first image from HTML
+const getFirstImage = (html: string) => {
+  const match = html.match(/<img[^>]+src="([^">]+)"/);
+  return match ? match[1] : null;
+};
 
 export default async function ArchivesPage() {
-  // Pull all videos from the D1 Database
   const db = (getRequestContext().env as any).reality_decoded_db;
+
+  // 1. Fetch Videos
   const { results: videos } = await db.prepare('SELECT * FROM videos ORDER BY created_at DESC').all();
+
+  // 2. Fetch Live Articles
+  const { results: articles } = await db.prepare(
+    "SELECT * FROM articles WHERE status = 'published' ORDER BY created_at DESC"
+  ).all();
+
+  // 3. Transform Articles to match the ArchiveBoard data structure
+  const liveBlogs = articles.map((article: any) => ({
+    id: article.slug, // Using slug as ID so the Link works correctly
+    title: article.title,
+    description: stripHtml(article.content),
+    category: article.category || 'INTEL',
+    image: getFirstImage(article.content) || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop' // Fallback image
+  }));
 
   return (
     <main className="w-full bg-[#0a0a0a] text-white min-h-screen overflow-hidden relative pb-32">
       
-      {/* Global CSS for the fading animations */}
       <style>{`
         @keyframes fade-in-up {
           0% { opacity: 0; transform: translateY(30px); }
@@ -36,7 +52,6 @@ export default async function ArchivesPage() {
 
       <div className="max-w-7xl mx-auto px-6 pt-32 relative z-10">
         
-        {/* Header Section */}
         <div className="mb-12 text-center flex flex-col items-center animate-[fade-in-up_0.8s_ease-out_forwards]">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 text-purple-400 text-sm font-semibold border border-purple-500/20 mb-6 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
             <span className="relative flex h-2 w-2">
@@ -53,8 +68,8 @@ export default async function ArchivesPage() {
           </p>
         </div>
 
-        {/* 3. INJECT THE CLIENT-SIDE BOARD */}
-        <ArchiveBoard videos={videos} blogs={MOCK_BLOGS_ARCHIVE} />
+        {/* Passing the live DB data (videos & liveBlogs) instead of mock data */}
+        <ArchiveBoard videos={videos} blogs={liveBlogs} />
 
       </div>
     </main>
