@@ -3,6 +3,7 @@ import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import PurgeButton from '@/components/PurgeButton';
+import LogoutButton from '@/components/LogoutButton';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
@@ -88,7 +89,7 @@ export default async function CommandCenterHQ() {
       
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
-        <div className="flex items-end justify-between border-b border-white/10 pb-6 mb-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-10">
           <div>
             <div className="flex items-center gap-3 mb-2 text-red-500 text-xs tracking-widest uppercase font-bold">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
@@ -98,12 +99,22 @@ export default async function CommandCenterHQ() {
               Command Center
             </h1>
           </div>
-          <div className="text-right flex flex-col items-end gap-2">
-            <p className="text-gray-500 text-xs uppercase tracking-widest">System Status: <span className="text-green-400 font-bold">Online</span></p>
-            <Link href="/hq/write" className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-4 py-2 rounded transition-colors font-bold shadow-[0_0_10px_purple]">
-              + New Transmission
-            </Link>
-          </div>
+          <div className="flex flex-col items-start sm:items-end gap-3 w-full sm:w-auto mt-6 sm:mt-0">
+  
+  {/* Status & Logout Row (Added flex-wrap so they never break the screen) */}
+  <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+    <p className="text-gray-500 text-xs uppercase tracking-widest shrink-0">
+      System Status: <span className="text-green-400 font-bold">Online</span>
+    </p>
+    <LogoutButton/>
+  </div>
+
+  {/* Transmission Button (Full width on mobile, auto width on desktop) */}
+  <Link href="/hq/write" className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-4 py-2 rounded transition-colors font-bold shadow-[0_0_10px_purple] w-full sm:w-auto text-center">
+    + New Transmission
+  </Link>
+  
+</div>
         </div>
 
         {/* SERVER DRAFTS SECTION (Now with Publish Buttons) */}

@@ -9,26 +9,25 @@ const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 export default function ShareStoryPage() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
   const [recentDrops, setRecentDrops] = useState<any[]>([]);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [isOptedIn, setIsOptedIn] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    // Replace your fetch block with this safe version
-fetch('/api/share')
-  .then(res => {
-    if (!res.ok) return []; // If server error, return empty array instead of crashing
-    return res.json();
-  })
-  .then(data => setRecentDrops(data))
-  .catch(() => setRecentDrops([])); // Silence errors
+    fetch('/api/share')
+      .then(res => {
+        if (!res.ok) return []; 
+        return res.json();
+      })
+      .then(data => setRecentDrops(data))
+      .catch(() => setRecentDrops([])); 
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFileName(e.target.files[0].name);
+      setFile(e.target.files[0]);
     } else {
-      setFileName(null);
+      setFile(null);
     }
   };
 
@@ -40,14 +39,29 @@ fetch('/api/share')
     const formData = new FormData(form);
 
     try {
+      let finalImageUrl = "";
+
+      // 1. UPLOAD TO IMGBB (If file exists)
+      const imgbbKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+      if (file && imgbbKey) {
+        const imgData = new FormData();
+        imgData.append("image", file);
+        
+        const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+          method: "POST",
+          body: imgData,
+        });
+        const imgJson = await imgRes.json();
+        if (imgJson.success) finalImageUrl = imgJson.data.url;
+      }
+
       const emailEndpointUrl = process.env.NEXT_PUBLIC_GETFORM_ENDPOINT;
-      
       const alias = formData.get('alias') as string;
       const email = formData.get('email') as string;
       const subject = formData.get('subject') as string;
       const story = formData.get('story') as string;
-      
-      // 1. TRANSMIT TO EMAIL PROVIDER (If Endpoint Exists)
+
+      // 2. TRANSMIT TO GETFORM (Email)
       let emailProviderRequest = Promise.resolve({ ok: true });
       if (emailEndpointUrl) {
         const forminitData = new FormData();
@@ -55,10 +69,11 @@ fetch('/api/share')
         if (email) forminitData.append('fi-sender-email', email);
         forminitData.append('fi-text-subject', subject || 'No Subject');
         forminitData.append('fi-text-story', story || 'No Story');
+        forminitData.append('fi-intent', isOptedIn ? 'HQ Submission' : 'General Tip');
         
-        const file = formData.get('attachment') as File;
-        if (file && file.size > 0) {
-          forminitData.append('fi-file-attachment', file); 
+        // Append the live ImgBB URL to the email body if we got one
+        if (finalImageUrl) {
+          forminitData.append('fi-image-url', finalImageUrl);
         }
         
         emailProviderRequest = fetch(emailEndpointUrl, {
@@ -68,8 +83,16 @@ fetch('/api/share')
         });
       }
 
-      // 2. TRANSMIT TO DATABASE (Straight into intel_submissions)
-      const dbData = { alias, email, subject, story };
+      // 3. TRANSMIT TO DATABASE (With boolean flag and image URL)
+      const dbData = { 
+        alias, 
+        email, 
+        subject, 
+        story,
+        file_url: finalImageUrl,
+        isApplication: isOptedIn 
+      };
+      
       const dbRequest = fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -87,7 +110,8 @@ fetch('/api/share')
 
       setStatus('success');
       form.reset();
-      setFileName(null);
+      setFile(null);
+      setIsOptedIn(false);
       
       // Refresh sidebar feed
       fetch('/api/share').then(res => res.json()).then(data => setRecentDrops(data));
@@ -214,18 +238,18 @@ fetch('/api/share')
                 </div>
 
                 <div className="relative border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-purple-500/50 transition-colors bg-[#0a0a0a] group/upload cursor-pointer mt-2">
-                  <input type="file" name="attachment" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                  <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                   
-                  {fileName ? (
+                  {file ? (
                     <div className="flex flex-col items-center justify-center text-purple-400">
                       <svg className="w-10 h-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      <p className="font-bold text-white">{fileName}</p>
+                      <p className="font-bold text-white">{file.name}</p>
                       <p className="text-xs text-gray-500 mt-1">Ready to transmit</p>
                     </div>
                   ) : (
                     <>
                       <svg className="w-10 h-10 text-gray-600 mx-auto mb-4 group-hover/upload:text-purple-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                      <p className="text-gray-400 font-medium group-hover/upload:text-white transition-colors">Attach Evidence or Documents</p>
+                      <p className="text-gray-400 font-medium group-hover/upload:text-white transition-colors">Attach Evidence (Image Only)</p>
                       <p className="text-xs text-gray-600 mt-2">(Optional)</p>
                     </>
                   )}
@@ -235,7 +259,6 @@ fetch('/api/share')
                   <label className="relative flex items-center cursor-pointer group/toggle">
                     <input 
                       type="checkbox" 
-                      name="postAsBlog" 
                       checked={isOptedIn} 
                       onChange={() => setIsOptedIn(!isOptedIn)} 
                       className="sr-only" 
@@ -325,7 +348,7 @@ fetch('/api/share')
                         <span className="text-[10px] text-gray-600 font-mono tracking-widest uppercase group-hover:text-purple-400/70">Encrypted</span>
                       </div>
                       <span className="text-gray-300 text-sm leading-snug line-clamp-2 group-hover:text-white transition-colors">
-                        {drop.subject}
+                        {drop.story}
                       </span>
                     </div>
                   </article>

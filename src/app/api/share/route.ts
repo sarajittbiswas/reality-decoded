@@ -3,23 +3,39 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
+// 1. Tell TypeScript exactly what data to expect
+interface SharePayload {
+  alias?: string;
+  email?: string;
+  subject?: string;
+  story: string;
+  file_url?: string;
+  isApplication?: boolean;
+}
+
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
-    const { alias, email, subject, story } = data;
+    const data = (await request.json()) as SharePayload;
+    const { alias, email, subject, story, file_url, isApplication } = data;
     const db = (getRequestContext().env as any).reality_decoded_db;
     const newId = crypto.randomUUID();
 
-    // Now we save the SUBJECT to the database!
+    // 🚨 THE ROUTING GATEKEEPER
+    // If it's an application, mark it 'pending' so it appears in HQ.
+    // If it's just a general tip, mark it 'general' so it stays safely stored but out of HQ.
+    const submissionStatus = isApplication === true ? 'pending' : 'general';
+
+    // ALWAYS save every single piece of intel to the database with full data
     await db.prepare(
-      'INSERT INTO intel_submissions (id, name, contact, story, status, subject) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO intel_submissions (id, name, contact, story, status, subject, file_url) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).bind(
       newId, 
       alias || 'Anonymous', 
       email || 'No Contact Provided', 
       story, 
-      'pending',
-      subject || 'Untitled Transmission' // Saving the real title
+      submissionStatus,
+      subject || 'Untitled Transmission',
+      file_url || null // Securely saves the ImgBB link for all types of drops
     ).run();
 
     return NextResponse.json({ success: true }, { status: 200 });
@@ -33,11 +49,13 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     const db = (getRequestContext().env as any).reality_decoded_db;
+    
+    // 🚨 REMOVED THE 'WHERE status = pending' CONSTRAINT
+    // Now it safely captures the 7 most recent drops, regardless of their publication intent.
     const { results } = await db.prepare(
-      "SELECT name, story FROM intel_submissions WHERE status = 'pending' ORDER BY submitted_at DESC LIMIT 7"
+      "SELECT name, story FROM intel_submissions ORDER BY submitted_at DESC LIMIT 8"
     ).all();
     
-    // Safety: ensure we always return an array, even if empty
     return NextResponse.json(results || [], { status: 200 });
   } catch (error) {
     return NextResponse.json([], { status: 200 }); 

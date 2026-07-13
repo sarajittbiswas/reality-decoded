@@ -1,5 +1,6 @@
 import { Inter, Space_Grotesk } from 'next/font/google';
 import Navbar from '@/components/Navbar';
+import SecretEntrance from '@/components/SecretEntrance';
 import type { Metadata } from 'next';
 import './globals.css';
 
@@ -82,6 +83,7 @@ export default function RootLayout({
     }),
   }}
 />
+        <SecretEntrance />
         {/* TOP NAVIGATION BAR */}
         <Navbar />
 

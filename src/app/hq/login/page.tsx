@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Space_Grotesk } from 'next/font/google';
 import { useRouter } from 'next/navigation';
-import { ShieldAlert, Fingerprint, Lock, ArrowRight, Loader2 } from 'lucide-react';
+// 🚨 Added Eye and EyeOff to your existing lucide-react imports
+import { ShieldAlert, Fingerprint, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react'; 
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
@@ -18,6 +19,9 @@ export default function SyndicateLogin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [pin, setPin] = useState('');
+  
+  // 🚨 Added state to track password visibility
+  const [showPassword, setShowPassword] = useState(false);
 
   // 🚨 Handle Step 1 Verification
   const handleStepOne = async (e: React.FormEvent) => {
@@ -122,16 +126,26 @@ export default function SyndicateLogin() {
                 <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Passkey</label>
                 <div className="relative">
                   <input 
-                    type="password" 
+                    // 🚨 Toggle input type dynamically
+                    type={showPassword ? "text" : "password"} 
                     required
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setErrorCode(''); }}
-                    // 🚨 Specific Error Outline
-                    className={`w-full bg-[#111] border rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none transition-all text-sm tracking-widest font-mono
+                    // Added pr-10 so the typed text doesn't hide behind the new eye icon
+                    className={`w-full bg-[#111] border rounded-lg px-4 py-3 pr-10 text-white placeholder-gray-600 focus:outline-none transition-all text-sm tracking-widest font-mono
                       ${errorCode === 'invalid_password' ? 'border-red-500/50 focus:border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'border-white/10 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50'}`}
                     placeholder="••••••••••••"
                   />
-                  <Lock className={`absolute right-3 top-3.5 ${errorCode === 'invalid_password' ? 'text-red-500' : 'text-gray-600'}`} size={16} />
+                  
+                  {/* 🚨 Interactive Eye Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className={`absolute right-3 top-3.5 transition-colors focus:outline-none ${errorCode === 'invalid_password' ? 'text-red-500 hover:text-red-400' : 'text-gray-600 hover:text-purple-400'}`}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
                 {errorCode === 'invalid_password' && <span className="text-red-400 text-[10px] uppercase tracking-widest mt-1">Error: Passkey mismatch.</span>}
               </div>

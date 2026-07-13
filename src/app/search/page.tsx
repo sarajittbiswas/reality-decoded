@@ -107,7 +107,7 @@ export default async function SearchPage({
   }
 
   return (
-    <main className="w-full min-h-screen bg-[#0a0a0a] pt-12 pb-24">
+    <main className="w-full min-h-screen bg-[#0a0a0a] pt-32 pb-24">
       <div className="max-w-7xl mx-auto px-6">
         
         {/* Search Header */}

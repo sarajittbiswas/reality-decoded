@@ -45,8 +45,8 @@ export default async function VideosPage() {
             </span>
             Video Logs Active
           </div>
-          <h1 className={`${spaceGrotesk.className} text-5xl md:text-7xl font-extrabold tracking-tight mb-4 uppercase`}>
-            Decoded <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-red-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">Transmissions.</span>
+          <h1 className={`${spaceGrotesk.className} text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-tight mb-6 break-words px-2 uppercase`}>
+            Decoded <br className="block md:hidden" /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-red-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">Transmissions.</span>
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl">
             Our complete collection of unedited reality, authentic stories, and visual investigations. 
