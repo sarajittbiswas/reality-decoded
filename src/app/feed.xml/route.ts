@@ -7,10 +7,10 @@ export async function GET() {
   try {
     const db = (getRequestContext().env as any).reality_decoded_db;
     
-    // FETCH UPDATE: Removed 'excerpt' from the SQL query to stop the crash
+    
     const { results: articles } = await db.prepare(
-      "SELECT title, slug, created_at FROM articles WHERE status = 'published' ORDER BY created_at DESC LIMIT 20"
-    ).all();
+  "SELECT title, slug, excerpt, created_at FROM articles WHERE status = 'published' ORDER BY created_at DESC LIMIT 20"
+).all();
 
     const baseUrl = 'https://realitydecoded.in';
 
@@ -25,12 +25,12 @@ export async function GET() {
     articles.forEach((article: any) => {
       xml += `
         <item>
-          <title><![CDATA[${article.title}]]></title>
-          <link>${baseUrl}/blogs/${article.slug}</link>
-          <description><![CDATA[Classified intel transmission. Access the full report on the secure grid.]]></description>
-          <pubDate>${article.created_at ? new Date(article.created_at).toUTCString() : new Date().toUTCString()}</pubDate>
-          <guid>${baseUrl}/blogs/${article.slug}</guid>
-        </item>`;
+  <title><![CDATA[${article.title}]]></title>
+  <link>${baseUrl}/blogs/${article.slug}</link>
+  <description><![CDATA[${article.excerpt || 'Classified intel transmission. Access the full report on the secure grid.'}]]></description>
+  <pubDate>${article.created_at ? new Date(article.created_at).toUTCString() : new Date().toUTCString()}</pubDate>
+  <guid>${baseUrl}/blogs/${article.slug}</guid>
+</item>`;
     });
 
     xml += `

@@ -85,7 +85,9 @@ export default function ArchiveBoard({ videos, blogs }: { videos: any[], blogs: 
                   <h3 className={`${spaceGrotesk.className} font-bold text-lg leading-tight mb-2 text-gray-200 group-hover:text-white transition-colors`}>
                     {item.title}
                   </h3>
-                  <p className="text-sm text-gray-500 line-clamp-2 mt-auto leading-relaxed">{item.description}</p>
+                  <p className="text-sm text-gray-500 line-clamp-2 mt-auto leading-relaxed">
+                    {item.excerpt || item.description || "Classified intel transmission. Access the full report."}
+                    </p>
                 </div>
               </article>
             </Link>

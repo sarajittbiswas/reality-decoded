@@ -88,7 +88,7 @@ export default async function PublicBlogFeed() {
                       </h2>
                       
                       <p className="text-xs text-gray-500 line-clamp-3 mb-6 flex-grow leading-relaxed">
-                        {previewText}
+                        {article.excerpt || "Classified intel transmission. Access the full report."}
                       </p>
 
                       <div className="flex items-center text-[10px] font-bold text-gray-500 group-hover:text-purple-400 transition-colors uppercase tracking-widest mt-auto border-t border-white/5 pt-4">

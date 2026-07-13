@@ -31,7 +31,7 @@ export default async function ArchivesPage() {
   const liveBlogs = articles.map((article: any) => ({
     id: article.slug, // Using slug as ID so the Link works correctly
     title: article.title,
-    description: stripHtml(article.content),
+    description: stripHtml(article.excerpt || "Classified intel transmission. Access the full report."),
     category: article.category || 'INTEL',
     image: getFirstImage(article.content) || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop' // Fallback image
   }));

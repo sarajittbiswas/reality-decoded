@@ -223,7 +223,7 @@ export default async function Home() {
                         {item.title}
                       </h3>
                       <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed mt-auto font-light">
-                        {descriptionText}
+                        {item.excerpt || item.description || "Classified intel transmission. Access the full report."}
                       </p>
                     </div>
                   </article>
