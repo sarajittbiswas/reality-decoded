@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   
   // Favicon & Apple Touch Icon (for iOS devices)
   icons: {
-    icon: '/final_no_bg.png', //favicon for browsers
+    icon: '/icon.png', //favicon for browsers
     apple: '/final_01.png', // Fallback for Apple devices
   },
 
@@ -61,7 +61,27 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="bg-[#FFFFFF] text-white font-sans antialiased flex flex-col min-h-screen">
-        
+        <script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Reality Decoded",
+      "url": "https://realitydecoded.in",
+      "logo": "https://realitydecoded.in/final_no_bg.png", // Ensure this URL is live
+      "sameAs": [
+        "https://www.linkedin.com/company/realitydecoded",
+        "https://www.instagram.com/therealitydecoded" 
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+91-9547000000",
+        "contactType": "customer service"
+      }
+    }),
+  }}
+/>
         {/* TOP NAVIGATION BAR */}
         <Navbar />
 

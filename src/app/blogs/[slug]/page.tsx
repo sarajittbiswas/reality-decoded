@@ -6,43 +6,17 @@ import Interactions from '@/components/Interactions';
 import ScrollProgress from '@/components/ScrollProgress';
 import Link from 'next/link';
 
-
-// 🚨 SEO METADATA GENERATOR (Updated for Next.js 15 Promise Params)
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  try {
-    const resolvedParams = await params;
-    const db = (getRequestContext().env as any).reality_decoded_db;
-    const article = await db.prepare("SELECT title, category, content FROM articles WHERE slug = ?").bind(resolvedParams.slug).first();
-    
-    if (!article) return { title: 'Not Found | Reality Decoded' };
-
-    const cleanDescription = (article.content as string).replace(/<[^>]*>?/gm, '').substring(0, 160) + '...';
-
-    return {
-      title: `${article.title} | Reality Decoded`,
-      description: cleanDescription,
-      openGraph: {
-        title: article.title as string,
-        description: cleanDescription,
-        type: 'article',
-      }
-    };
-  } catch (error) {
-    return { title: 'Transmission | Reality Decoded' };
-  }
-}
-
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 export const runtime = 'edge';
 
-// Helper: Extract the first image
+// Helper: Extract the first image from the HTML content body
 const getFirstImage = (html: string) => {
   if (!html) return null;
   const match = html.match(/<img[^>]+src="([^">]+)"/);
   return match ? match[1] : null;
 };
 
-// Helper: Reading time
+// Helper: Calculate reading time
 const calculateReadingTime = (text: string) => {
   if (!text) return "1 MIN READ";
   const words = text.replace(/<[^>]*>?/gm, '').split(/\s+/).length;
@@ -50,14 +24,66 @@ const calculateReadingTime = (text: string) => {
   return `${minutes} MIN READ`;
 };
 
+// 🚨 AUTOMATED DYNAMIC SEO METADATA GENERATOR (Next.js 15 Promise Params Compatible)
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  try {
+    const resolvedParams = await params;
+    const db = (getRequestContext().env as any).reality_decoded_db;
+    
+    // Fetches title, category, and raw content containing your images
+    const article = await db.prepare("SELECT title, category, content FROM articles WHERE slug = ?").bind(resolvedParams.slug).first();
+    
+    if (!article) return { title: 'Not Found | Reality Decoded' };
+
+    const baseUrl = 'https://realitydecoded.in';
+    const cleanDescription = (article.content as string).replace(/<[^>]*>?/gm, '').substring(0, 160) + '...';
+
+    // ⚡ AUTO-EXTRACT IMAGE FROM CONTENT BODY
+    const extractedImg = getFirstImage(article.content as string);
+    
+    // Resolve absolute paths: If it's a raw link (e.g. Unsplash), use it directly. Otherwise, patch it with your domain.
+    let imageUrl = extractedImg || `${baseUrl}/default-cover.png`;
+    if (extractedImg && !extractedImg.startsWith('http')) {
+      imageUrl = `${baseUrl}${extractedImg.startsWith('/') ? '' : '/'}${extractedImg}`;
+    }
+
+    return {
+      title: `${article.title} | Reality Decoded`,
+      description: cleanDescription,
+      openGraph: {
+        title: article.title as string,
+        description: cleanDescription,
+        url: `${baseUrl}/blogs/${resolvedParams.slug}`,
+        siteName: 'Reality Decoded',
+        type: 'article',
+        images: [
+          {
+            url: imageUrl,
+            width: 1200,
+            height: 630,
+            alt: article.title as string,
+          }
+        ]
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: article.title as string,
+        description: cleanDescription,
+        images: [imageUrl],
+      }
+    };
+  } catch (error) {
+    return { title: 'Transmission | Reality Decoded' };
+  }
+}
+
 export default async function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
 
   const db = (getRequestContext().env as any).reality_decoded_db;
   
-  // 1. Fetch the main article
-  // 🚨 FIXED QUERY: Joins the articles table with the agent table to get the avatar
+  // 1. Fetch the main article with agent credentials
   const article = await db.prepare(`
     SELECT articles.*, syndicate_agents.name as agent_name, syndicate_agents.avatar as agent_avatar
     FROM articles 
@@ -70,7 +96,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   // Determine if it's a clean team post or a user submission
   const isTeamArticle = article.author === 'Syndicate Admin';
 
-  // 2. Fetch 3 related articles (guaranteed to pull the 3 latest published blogs, excluding current)
+  // 2. Fetch 3 related articles (excluding current article)
   const { results: relatedArticles } = await db.prepare(
     "SELECT * FROM articles WHERE slug != ? AND status = 'published' ORDER BY created_at DESC LIMIT 3"
   ).bind(slug).all();
@@ -102,8 +128,6 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           </h1>
           
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500 font-mono uppercase tracking-widest">
-            
-            {/* 🚨 DYNAMIC AUTHOR DISPLAY */}
             {article.agent_name ? (
               <div className="flex items-center gap-2">
                 <img src={article.agent_avatar} alt="Agent Avatar" className="w-6 h-6 rounded-full border border-purple-500/50 shadow-[0_0_10px_purple]" />
@@ -168,7 +192,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           <span className="text-[10px] text-gray-600 uppercase tracking-widest">End of Transmission</span>
         </div>
 
-        {/* 🚨 RESTORED & FORTIFIED RELATED INTELLIGENCE SECTION */}
+        {/* RELATED INTELLIGENCE SECTION */}
         {relatedArticles.length > 0 && (
           <div className="border-t border-white/5 pt-12 relative z-10 max-w-4xl mx-auto">
             <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-white uppercase mb-8 flex items-center gap-3`}>
@@ -198,7 +222,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
         )}
       </article>
 
-      {/* 🚨 CSS INJECTION FIXED: Server Component Safe */}
+      {/* SERVER COMPONENT CSS INJECTION */}
       <style dangerouslySetInnerHTML={{ __html: `
         .syndicate-prose {
           color: #e5e7eb;
