@@ -21,6 +21,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '' ? 1.0 : 0.8,
   }));
 
+  // NEW: Define Legal/Compliance pages with lower priority (0.5)
+  const legalRoutes = [
+    '/privacy',
+    '/terms' // Make sure these match your actual slugs!
+  ].map((route) => ({
+    url: `${baseUrl}${route}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.5,
+  }));
+
   try {
     const db = (getRequestContext().env as any).reality_decoded_db;
     
@@ -36,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }));
 
-    // 3. Fetch all published articles (NEW)
+    // 3. Fetch all published articles (PRESERVED)
     const { results: articles } = await db.prepare(
       "SELECT slug, updated_at, created_at FROM articles WHERE status = 'published' ORDER BY created_at DESC"
     ).all();
@@ -49,12 +60,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7, // Slightly higher priority than videos for text indexing
     }));
 
-    // 4. Merge and return the complete sitemap
-    return [...staticRoutes, ...dynamicVideoRoutes, ...dynamicArticleRoutes];
+    // 4. Merge and return the complete sitemap (UPDATED with legalRoutes)
+    return [...staticRoutes, ...legalRoutes, ...dynamicVideoRoutes, ...dynamicArticleRoutes];
     
   } catch (error) {
     console.error("Sitemap generation error:", error);
-    // Graceful fallback to static routes if the database connection fails
-    return staticRoutes;
+    // Graceful fallback to static and legal routes if the database connection fails
+    return [...staticRoutes, ...legalRoutes];
   }
 }
