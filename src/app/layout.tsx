@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     siteName: 'Reality Decoded',
     images: [
       {
-        url: '/yt_img.png', // Your fallback global OG Image
+        url: '/default-cover.png', // Your fallback global OG Image
         width: 1200,
         height: 630,
         alt: 'Reality Decoded Broadcast Network',
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Reality Decoded',
     description: 'Independent investigations and unedited reality.',
-    images: ['/yt_img.png'], 
+    images: ['/default-cover.png'], 
   },
 };
 
