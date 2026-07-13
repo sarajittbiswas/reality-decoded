@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 export default function SecretEntrance() {
-  const router = useRouter();
-  
-  // 🚨 Strictly pulls from the .env file. No hardcoded fallback.
-  // Note: ensure your .env value is purely lowercase.
+  const pathname = usePathname();
   const secretCode = process.env.NEXT_PUBLIC_GHOST_PROTOCOL; 
 
   useEffect(() => {
-    // 🚨 If the environment variable is missing, the listener aborts entirely.
-    // The backdoor remains completely shut.
+    // 🚨 DISABLE IF INSIDE HQ
+    // This stops the code from running if you are already in the HQ terminal
+    if (pathname.startsWith('/hq')) return;
     if (!secretCode) return;
 
     let buffer = '';
@@ -36,13 +34,13 @@ export default function SecretEntrance() {
 
       if (buffer === secretCode) {
         buffer = ''; 
-        router.push('/hq');
+        window.open('/hq', '_blank', 'noopener,noreferrer');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [router, secretCode]);
+  }, [secretCode, pathname]); // Added pathname as a dependency
 
   return null; 
 }
