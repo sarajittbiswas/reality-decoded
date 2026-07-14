@@ -2,6 +2,7 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers'; // 🚨 IMPORTED COOKIES
 import PurgeButton from '@/components/PurgeButton';
 import LogoutButton from '@/components/LogoutButton';
 
@@ -18,50 +19,30 @@ async function approveIntelToEditor(formData: FormData) {
   const intel = await db.prepare("SELECT * FROM intel_submissions WHERE id = ?").bind(id).first();
   if (intel) {
     const newId = crypto.randomUUID();
-    
-    // 1. Use the real subject, fallback to a name
     const finalTitle = intel.subject || `Intel from ${intel.name || 'Anonymous'}`;
+    const slug = finalTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     
-    // 2. Generate a clean slug from the REAL title
-    const slug = finalTitle.toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-    
-    // 3. Insert using the real data
     await db.prepare(
       "INSERT INTO articles (id, title, slug, category, tags, content, author, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     ).bind(
-      newId, 
-      finalTitle, 
-      slug, 
-      'INTEL', 
-      '', 
-      `<p>${intel.story}</p>`, 
-      intel.name || 'Anonymous', 
-      'draft'
+      newId, finalTitle, slug, 'INTEL', '', `<p>${intel.story}</p>`, intel.name || 'Anonymous', 'draft'
     ).run();
     
     await db.prepare("UPDATE intel_submissions SET status = 'processed' WHERE id = ?").bind(id).run();
   }
-  
   revalidatePath('/hq');
 }
 
-// 🚨 NEW SERVER ACTION: Publish a draft live to the /blogs page!
 async function publishArticleLive(formData: FormData) {
   'use server';
   const id = formData.get('id') as string;
   const { getRequestContext } = await import('@cloudflare/next-on-pages');
   const db = (getRequestContext().env as any).reality_decoded_db;
   
-  await db.prepare(
-    "UPDATE articles SET status = 'published', updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-  ).bind(id).run();
-  
+  await db.prepare("UPDATE articles SET status = 'published', updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(id).run();
   revalidatePath('/hq');
 }
 
-// Server Action: Delete spam intel
 async function purgeIntel(formData: FormData) {
   'use server';
   const id = formData.get('id') as string;
@@ -75,12 +56,21 @@ async function purgeIntel(formData: FormData) {
 export default async function CommandCenterHQ() {
   const db = (getRequestContext().env as any).reality_decoded_db;
   
-  const { results: allArticles } = await db.prepare('SELECT * FROM articles ORDER BY created_at DESC').all();
+  // 🚨 IDENTITY PROTOCOL: Fetch the logged-in agent's details
+  const cookieStore = await cookies();
+  const operatorId = cookieStore.get('hq_operator_id')?.value;
+  let agentProfile = null;
+  if (operatorId) {
+    agentProfile = await db.prepare('SELECT name, avatar FROM syndicate_agents WHERE id = ?').bind(operatorId).first();
+  }
   
-  // 🚨 BUG FIX: Include both 'draft' AND 'pending' so articles from the editor don't fall into the black hole!
+  // Extract First Name (or fallback to ID)
+  const firstName = agentProfile?.name ? agentProfile.name.split(' ')[0] : (operatorId || 'Agent');
+  const avatarUrl = agentProfile?.avatar || null;
+
+  const { results: allArticles } = await db.prepare('SELECT * FROM articles ORDER BY created_at DESC').all();
   const drafts = allArticles.filter((a: any) => a.status === 'draft' || a.status === 'pending');
   const liveArticles = allArticles.filter((a: any) => a.status === 'published');
-
   const { results: pendingIntel } = await db.prepare("SELECT * FROM intel_submissions WHERE status = 'pending' ORDER BY submitted_at DESC").all();
 
   return (
@@ -101,23 +91,39 @@ export default async function CommandCenterHQ() {
           </div>
           <div className="flex flex-col items-start sm:items-end gap-3 w-full sm:w-auto mt-6 sm:mt-0">
   
-  {/* Status & Logout Row (Added flex-wrap so they never break the screen) */}
-  <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-    <p className="text-gray-500 text-xs uppercase tracking-widest shrink-0">
-      System Status: <span className="text-green-400 font-bold">Online</span>
-    </p>
-    <LogoutButton/>
-  </div>
+          {/* 🚨 UPDATED HUD: Welcome Name + Avatar + Status + Logout */}
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap bg-[#111] border border-white/10 px-4 py-2.5 rounded-xl w-full sm:w-auto justify-between sm:justify-start shadow-xl">
+            
+            {/* Avatar & Welcome Name */}
+            <div className="flex items-center gap-2 pr-3 sm:pr-4 border-r border-white/10">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-6 h-6 rounded-full border border-purple-500/50 object-cover" />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-purple-500/20 border border-purple-500/50 flex items-center justify-center text-purple-400 text-[10px] font-bold shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                  {firstName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="text-gray-400 font-bold text-[10px] uppercase tracking-widest hidden sm:inline">Welcome, </span>
+              <span className="text-white font-bold text-[11px] sm:text-xs tracking-widest uppercase">{firstName}</span>
+            </div>
 
-  {/* Transmission Button (Full width on mobile, auto width on desktop) */}
-  <Link href="/hq/write" className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-4 py-2 rounded transition-colors font-bold shadow-[0_0_10px_purple] w-full sm:w-auto text-center">
-    + New Transmission
-  </Link>
-  
-</div>
+            {/* Status */}
+            <p className="text-gray-500 text-[10px] sm:text-xs uppercase tracking-widest shrink-0">
+              Status: <span className="text-green-400 font-bold animate-pulse">Online</span>
+            </p>
+            
+            <LogoutButton/>
+          </div>
+
+          <Link href="/hq/write" className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-4 py-3 rounded-xl transition-colors font-bold shadow-[0_0_15px_rgba(168,85,247,0.4)] w-full sm:w-auto text-center uppercase tracking-widest">
+            + New Transmission
+          </Link>
+          
+        </div>
         </div>
 
-        {/* SERVER DRAFTS SECTION (Now with Publish Buttons) */}
+        {/* ... Rest of your component (Server Drafts, Pending Intel, Archives) remains exactly as it was ... */}
+        {/* SERVER DRAFTS SECTION */}
         <section className="mb-12">
           <h2 className={`${spaceGrotesk.className} text-xl font-bold mb-4 flex items-center gap-3 text-purple-400`}>
             Server Drafts
@@ -131,24 +137,14 @@ export default async function CommandCenterHQ() {
                   <h3 className="text-sm font-bold text-gray-200 truncate">{draft.title}</h3>
                   <p className="text-[10px] text-gray-500 uppercase mt-1">{new Date(draft.created_at).toLocaleDateString()}</p>
                 </div>
-                
-                {/* 🚨 NEW: Action Buttons Row */}
                 <div className="flex items-center gap-2">
-                  <Link 
-                    href={`/hq/write?id=${draft.id}`} 
-                    className="flex-1 text-center text-[10px] font-bold tracking-widest uppercase text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 px-3 py-2 rounded-lg border border-purple-500/30 transition-colors"
-                  >
-                    Edit
-                  </Link>
+                  <Link href={`/hq/write?id=${draft.id}`} className="flex-1 text-center text-[10px] font-bold tracking-widest uppercase text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 px-3 py-2 rounded-lg border border-purple-500/30 transition-colors">Edit</Link>
                   <form action={publishArticleLive} className="flex-1">
                     <input type="hidden" name="id" value={draft.id} />
-                    <button type="submit" className="w-full text-[10px] font-bold tracking-widest uppercase text-green-400 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-lg border border-green-500/30 transition-colors">
-                      Publish
-                    </button>
+                    <button type="submit" className="w-full text-[10px] font-bold tracking-widest uppercase text-green-400 bg-green-500/10 hover:bg-green-500/20 px-3 py-2 rounded-lg border border-green-500/30 transition-colors">Publish</button>
                   </form>
                   <PurgeButton id={draft.id} />
                 </div>
-
               </div>
             ))}
           </div>
@@ -161,12 +157,9 @@ export default async function CommandCenterHQ() {
               Pending Intel Queue
               <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">{pendingIntel.length}</span>
             </h2>
-            
             <div className="flex flex-col gap-4">
               {pendingIntel.length === 0 ? (
-                <div className="border border-dashed border-white/10 p-8 rounded-xl text-center text-gray-500">
-                  No new transmissions awaiting review.
-                </div>
+                <div className="border border-dashed border-white/10 p-8 rounded-xl text-center text-gray-500">No new transmissions awaiting review.</div>
               ) : (
                 pendingIntel.map((intel: any) => (
                   <div key={intel.id} className="bg-[#111] border border-blue-500/30 p-5 rounded-xl hover:bg-[#161616] transition-colors group relative overflow-hidden">
@@ -175,27 +168,17 @@ export default async function CommandCenterHQ() {
                       <span className="text-xs text-blue-400 font-bold uppercase">Public Submission</span>
                       <span className="text-[10px] text-gray-500">{new Date(intel.submitted_at).toLocaleDateString()}</span>
                     </div>
-                    <h3 className={`${spaceGrotesk.className} text-lg font-bold text-gray-200 mb-1 group-hover:text-white`}>
-                      Source: {intel.name || 'Anonymous'}
-                    </h3>
+                    <h3 className={`${spaceGrotesk.className} text-lg font-bold text-gray-200 mb-1 group-hover:text-white`}>Source: {intel.name || 'Anonymous'}</h3>
                     <p className="text-xs text-gray-400 mb-4 font-mono">{intel.contact}</p>
-                    
-                    <div className="bg-black border border-white/5 p-4 rounded-lg mb-6 max-h-64 overflow-y-auto mt-2 whitespace-pre-wrap text-sm text-gray-300 font-sans">
-                      {intel.story}
-                    </div>
-
+                    <div className="bg-black border border-white/5 p-4 rounded-lg mb-6 max-h-64 overflow-y-auto mt-2 whitespace-pre-wrap text-sm text-gray-300 font-sans">{intel.story}</div>
                     <div className="flex items-center gap-3">
                       <form action={approveIntelToEditor}>
                         <input type="hidden" name="id" value={intel.id} />
-                        <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">
-                          Convert to Draft & Edit
-                        </button>
+                        <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">Convert to Draft & Edit</button>
                       </form>
                       <form action={purgeIntel}>
                         <input type="hidden" name="id" value={intel.id} />
-                        <button type="submit" className="bg-transparent border border-white/10 hover:border-red-500/50 hover:text-red-400 text-gray-400 text-xs font-bold px-4 py-2 rounded-lg transition-colors">
-                          Purge File
-                        </button>
+                        <button type="submit" className="bg-transparent border border-white/10 hover:border-red-500/50 hover:text-red-400 text-gray-400 text-xs font-bold px-4 py-2 rounded-lg transition-colors">Purge File</button>
                       </form>
                     </div>
                   </div>
@@ -210,12 +193,9 @@ export default async function CommandCenterHQ() {
               Live Archives
               <span className="bg-white/10 text-gray-400 text-xs px-2 py-0.5 rounded-full">{liveArticles.length}</span>
             </h2>
-            
             <div className="flex flex-col gap-3">
               {liveArticles.length === 0 ? (
-                <div className="border border-dashed border-white/5 p-8 rounded-xl text-center text-gray-600">
-                  No articles currently published.
-                </div>
+                <div className="border border-dashed border-white/5 p-8 rounded-xl text-center text-gray-600">No articles currently published.</div>
               ) : (
                 liveArticles.map((article: any) => (
                   <div key={article.id} className="bg-transparent border border-white/5 p-4 rounded-xl flex items-center justify-between hover:bg-white/5 transition-colors">
@@ -223,15 +203,10 @@ export default async function CommandCenterHQ() {
                       <h3 className="text-sm font-bold text-gray-300 mb-1">{article.title}</h3>
                       <p className="text-[10px] text-gray-600 uppercase tracking-widest">/{article.slug}</p>
                     </div>
-                    
                     <div className="flex items-center gap-3">
-                      <Link href={`/hq/write?id=${article.id}`} className="text-gray-400 hover:text-white text-[10px] font-bold uppercase tracking-widest border border-white/10 px-2 py-1 rounded bg-[#111]">
-                        Edit Log
-                      </Link>
+                      <Link href={`/hq/write?id=${article.id}`} className="text-gray-400 hover:text-white text-[10px] font-bold uppercase tracking-widest border border-white/10 px-2 py-1 rounded bg-[#111]">Edit Log</Link>
                       <PurgeButton id={article.id} />
-                      <Link href={`/blogs/${article.slug}`} target="_blank" className="text-purple-400 hover:text-purple-300 text-xs font-bold">
-                        View Live &rarr;
-                      </Link>
+                      <Link href={`/blogs/${article.slug}`} target="_blank" className="text-purple-400 hover:text-purple-300 text-xs font-bold">View Live &rarr;</Link>
                     </div>
                   </div>
                 ))

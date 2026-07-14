@@ -96,7 +96,6 @@ function WriterWorkbench() {
   const [, setForceUpdate] = useState(0);
   const [modal, setModal] = useState<{isOpen: boolean, type: 'link' | 'image' | 'youtube', url: string}>({ isOpen: false, type: 'link', url: '' });
 
-  // 🚨 DYNAMIC STORAGE KEY: Isolates edits on existing posts from your brand new blank drafts
   const storageKey = urlDraftId ? `syndicate_draft_${urlDraftId}` : "syndicate_draft";
 
   const saveDraftLocally = (t: string, c: string, tags: string, content: string) => {
@@ -120,53 +119,60 @@ function WriterWorkbench() {
     onTransaction: () => setForceUpdate(prev => prev + 1)
   });
 
+  // 🚨 SURGICAL UPDATE: This useEffect now fetches the logged-in agent securely
   useEffect(() => {
-    fetch('/api/agents')
-      .then(res => res.json())
-      .then(data => setAgents(data));
+    Promise.all([
+      fetch('/api/agents').then(res => res.json()),
+      fetch('/api/auth/me').then(res => res.json()).catch(() => ({ id: '' }))
+    ]).then(([agentsData, meData]) => {
+      setAgents(agentsData);
 
-    if (urlDraftId) {
-      setSaveStatus("Fetching from Mainframe...");
-      fetch(`/api/editor?id=${urlDraftId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            setTitle(data.article.title);
-            setCategory(data.article.category || "");
-            setTags(data.article.tags || "");
-            setArticleId(data.article.id);
-            setExcerpt(data.article.excerpt || '');
-            
-            setAgentId(data.article.agent_id || "");
-            setIsPublished(data.article.status === 'published');
+      if (urlDraftId) {
+        setSaveStatus("Fetching from Mainframe...");
+        fetch(`/api/editor?id=${urlDraftId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              setTitle(data.article.title);
+              setCategory(data.article.category || "");
+              setTags(data.article.tags || "");
+              setArticleId(data.article.id);
+              setExcerpt(data.article.excerpt || '');
+              
+              setAgentId(data.article.agent_id || "");
+              setIsPublished(data.article.status === 'published');
 
-            // If there's a local backup for THIS SPECIFIC file, use it. Otherwise, use DB content.
-            const saved = localStorage.getItem(storageKey);
-            if (saved && editor && editor.isEmpty) {
-              const { content: savedContent } = JSON.parse(saved);
-              editor.commands.setContent(savedContent || data.article.content);
-            } else if (editor && editor.isEmpty) {
-              editor.commands.setContent(data.article.content);
+              const saved = localStorage.getItem(storageKey);
+              if (saved && editor && editor.isEmpty) {
+                const { content: savedContent } = JSON.parse(saved);
+                editor.commands.setContent(savedContent || data.article.content);
+              } else if (editor && editor.isEmpty) {
+                editor.commands.setContent(data.article.content);
+              }
+              setSaveStatus("Secure link established");
+            } else {
+              setSaveStatus("Error loading draft");
             }
-            setSaveStatus("Secure link established");
-          } else {
-            setSaveStatus("Error loading draft");
-          }
-        });
-    } else {
-      // 🚨 BRAND NEW POST: Uses the standard "syndicate_draft" memory slot
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const { title: savedTitle, category: savedCategory, tags: savedTags, content: savedContent } = JSON.parse(saved);
-        if (savedTitle) setTitle(savedTitle);
-        if (savedCategory) setCategory(savedCategory);
-        if (savedTags) setTags(savedTags);
-        if (savedContent && editor && editor.isEmpty) {
-          editor.commands.setContent(savedContent);
+          });
+      } else {
+        // 🚨 AUTO-ASSIGN IDENTITY: If it's a new post, select the current user in the dropdown!
+        if (meData && meData.id) {
+          setAgentId(meData.id);
         }
-        setSaveStatus("Draft restored from memory");
+
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          const { title: savedTitle, category: savedCategory, tags: savedTags, content: savedContent } = JSON.parse(saved);
+          if (savedTitle) setTitle(savedTitle);
+          if (savedCategory) setCategory(savedCategory);
+          if (savedTags) setTags(savedTags);
+          if (savedContent && editor && editor.isEmpty) {
+            editor.commands.setContent(savedContent);
+          }
+          setSaveStatus("Draft restored from memory");
+        }
       }
-    }
+    });
 
     fetch('/api/tags')
       .then(res => res.json())
@@ -243,7 +249,6 @@ function WriterWorkbench() {
            setSaveStatus(status === 'draft' ? "Draft secured in Mainframe" : "Transmitted to HQ Queue");
         }
         
-        // 🚨 REDIRECT FIX: Now redirects back to HQ if you click Submit OR Update Live File
         if (status === 'pending' || status === 'published') {
           localStorage.removeItem(storageKey);
           setTimeout(() => window.location.href = '/hq', 1500); 
@@ -328,7 +333,6 @@ function WriterWorkbench() {
               <label className="text-sm font-semibold text-gray-400">Tags (comma separated)</label>
               <input type="text" name="tags" value={tags} onChange={handleTagsChange} placeholder="e.g. ufo,conspiracy" className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
               
-              {/* 🚨 RESTORED: Suggested Tags UI */}
               {suggestedTags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   <span className="text-[10px] text-gray-600 uppercase tracking-widest mr-2 self-center">Suggested:</span>
