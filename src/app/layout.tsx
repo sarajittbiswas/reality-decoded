@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
   alternates: {
     types: {
-      'application/rss+xml': 'https://realitydecoded.in/rss.xml',
+      'application/rss+xml': 'https://realitydecoded.in/feed.xml',
     },
     canonical: '/', // Sets the default canonical URL to your root domain
   },

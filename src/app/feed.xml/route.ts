@@ -1,55 +1,71 @@
-import { NextResponse } from 'next/server';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
 
 export async function GET() {
-  try {
-    const db = (getRequestContext().env as any).reality_decoded_db;
-    
-    
-    const { results: articles } = await db.prepare(
-  "SELECT title, slug, excerpt, created_at FROM articles WHERE status = 'published' ORDER BY created_at DESC LIMIT 20"
-).all();
+  const db = (getRequestContext().env as any).reality_decoded_db;
+  const siteUrl = 'https://realitydecoded.in';
 
-    const baseUrl = 'https://realitydecoded.in';
+  // 1. Fetch the 20 most recent LIVE articles
+  const { results: articles } = await db.prepare(
+    "SELECT title, slug, excerpt, created_at, author FROM articles WHERE status = 'published' ORDER BY created_at DESC LIMIT 20"
+  ).all();
 
-    let xml = `<?xml version="1.0" encoding="UTF-8" ?>
-    <rss version="2.0">
-      <channel>
-        <title>Reality Decoded | Transmissions</title>
-        <link>${baseUrl}</link>
-        <description>Declassified field reports and intercepted video intelligence.</description>
-        <language>en-us</language>`;
+  // 2. Fetch the 20 most recent VIDEOS
+  const { results: videos } = await db.prepare(
+    "SELECT id, title, description, created_at FROM videos ORDER BY created_at DESC LIMIT 20"
+  ).all();
 
-    articles.forEach((article: any) => {
-      xml += `
-        <item>
-  <title><![CDATA[${article.title}]]></title>
-  <link>${baseUrl}/blogs/${article.slug}</link>
-  <description><![CDATA[${article.excerpt || 'Classified intel transmission. Access the full report on the secure grid.'}]]></description>
-  <pubDate>${article.created_at ? new Date(article.created_at).toUTCString() : new Date().toUTCString()}</pubDate>
-  <guid>${baseUrl}/blogs/${article.slug}</guid>
-</item>`;
-    });
+  // 3. Normalize Articles
+  const articleItems = articles.map((a: any) => ({
+    title: a.title,
+    url: `${siteUrl}/blogs/${a.slug}`,
+    description: a.excerpt || 'Transmission from Reality Decoded.',
+    timestamp: new Date(a.created_at).getTime(),
+    pubDate: new Date(a.created_at).toUTCString()
+  }));
 
-    xml += `
-      </channel>
-    </rss>`;
+  // 4. Normalize Videos (Adding [VIDEO] tag for LinkedIn)
+  const videoItems = videos.map((v: any) => ({
+    title: `[VIDEO] ${v.title}`,
+    url: `${siteUrl}/watch/${v.id}`,
+    description: v.description || 'Intercepted video intelligence.',
+    timestamp: new Date(v.created_at).getTime(),
+    pubDate: new Date(v.created_at).toUTCString()
+  }));
 
-    return new NextResponse(xml, {
-      headers: {
-        'Content-Type': 'text/xml',
-        'Cache-Control': 's-maxage=3600, stale-while-revalidate', // Re-enabled caching for speed
-      },
-    });
+  // 5. Merge, sort by newest, keep top 30
+  const combinedFeed = [...articleItems, ...videoItems]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 30);
 
-  } catch (error: any) {
-    return new NextResponse(`[SYS_LOG FAILURE]: ${error.message}`, {
-      status: 500,
-      headers: {
-        'Content-Type': 'text/plain',
-      },
-    });
-  }
+  // 6. Map into XML items
+  const rssItems = combinedFeed.map((item) => `
+    <item>
+      <title><![CDATA[${item.title}]]></title>
+      <link>${item.url}</link>
+      <description><![CDATA[${item.description}]]></description>
+      <pubDate>${item.pubDate}</pubDate>
+      <guid>${item.url}</guid>
+    </item>
+  `).join('');
+
+  // 7. Construct the master XML feed using your original branding
+  const feed = `<?xml version="1.0" encoding="UTF-8" ?>
+  <rss version="2.0">
+    <channel>
+      <title>Reality Decoded | Transmissions</title>
+      <link>${siteUrl}</link>
+      <description>Declassified field reports and intercepted video intelligence.</description>
+      <language>en-us</language>
+      ${rssItems}
+    </channel>
+  </rss>`;
+
+  return new Response(feed, {
+    headers: {
+      'Content-Type': 'text/xml; charset=utf-8',
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+    },
+  });
 }
