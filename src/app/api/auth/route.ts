@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Server misconfiguration: Missing Salt' }, { status: 500 });
     }
 
-    const db = getRequestContext().env.DB;
+    const db = getRequestContext().env.reality_decoded_db;
 
     const agent = await db.prepare('SELECT password_hash, pin_hash, email FROM hq_agents WHERE username = ?')
       .bind(username).first<{ password_hash: string, pin_hash: string, email: string }>();

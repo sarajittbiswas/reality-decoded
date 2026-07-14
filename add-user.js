@@ -2,8 +2,15 @@ const crypto = require('crypto');
 const { execSync } = require('child_process');
 
 // 🚨 LOAD FROM ENV, NOT HARDCODED
-require('dotenv').config(); // Ensure you have 'dotenv' installed (npm install dotenv)
+const path = require('path');
+require('dotenv').config({ path: path.resolve(process.cwd(), '.env.local') });
 const SALT = process.env.HQ_SALT;
+
+if (!SALT) {
+  console.error('❌ Error: HQ_SALT is missing.');
+  console.error('Debug: Checked path:', path.resolve(process.cwd(), '.env.local'));
+  process.exit(1);
+}
 
 if (!SALT) {
   console.error("Error: HQ_SALT is missing. Make sure .env.local exists.");
