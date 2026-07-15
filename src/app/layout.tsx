@@ -1,6 +1,7 @@
 import { Inter, Space_Grotesk } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import SecretEntrance from '@/components/SecretEntrance';
+import SecretUplink from '@/components/SecretUplink';
 import type { Metadata } from 'next';
 import './globals.css';
 
@@ -270,6 +271,8 @@ rel="noopener noreferrer" className="w-10 h-10 rounded-xl bg-[#111] border borde
           </div>
           
         </footer>
+
+        <SecretUplink />
 
       </body>
     </html>
