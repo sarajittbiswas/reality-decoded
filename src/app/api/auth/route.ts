@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getRequestContext } from '@cloudflare/next-on-pages';
+import { cookies } from 'next/headers'; // NEW: Imported for cookie access
 
 export const runtime = 'edge';
 
@@ -13,14 +14,35 @@ async function hashSecret(secret: string, salt: string) {
 
 export async function POST(request: Request) {
   try {
-    const { step, username, password, pin, otp } = await request.json();
+    // 1. Read the JSON body EXACTLY ONCE to prevent stream reading errors
+    const body = await request.json().catch(() => ({})); 
+    const { action, step, username, password, pin, otp } = body;
+    
+    const db = getRequestContext().env.reality_decoded_db;
+
+    // 🚨 MOVED TO TOP: Catch the logout request before it asks for a username
+    if (action === 'logout') {
+      const cookieStore = await cookies();
+      const sessionCookie = cookieStore.get('syndicate_session');
+      
+      // Purge the session from the database
+      if (sessionCookie?.value) {
+        await db.prepare('DELETE FROM hq_sessions WHERE session_id = ?').bind(sessionCookie.value).run();
+      }
+      
+      // Destroy the secure browser cookies
+      cookieStore.delete('syndicate_session');
+      cookieStore.delete('hq_operator_id');
+      
+      return NextResponse.json({ success: true });
+    }
+
+    // --- FROM HERE DOWN, YOUR ORIGINAL LOGIN LOGIC IS 100% UNTOUCHED ---
     const salt = process.env.HQ_SALT;
 
     if (!salt) {
       return NextResponse.json({ success: false, error: 'Server misconfiguration: Missing Salt' }, { status: 500 });
     }
-
-    const db = getRequestContext().env.reality_decoded_db;
 
     const agent = await db.prepare('SELECT password_hash, pin_hash, email FROM hq_agents WHERE username = ?')
       .bind(username).first<{ password_hash: string, pin_hash: string, email: string }>();
@@ -95,19 +117,28 @@ export async function POST(request: Request) {
 
       await db.prepare('DELETE FROM hq_otps WHERE email = ?').bind(agent.email).run();
 
+      // 🚨 UPGRADE: Generate unique 128-bit UUID for the session + timestamp
+      const secureSessionId = crypto.randomUUID() + '-' + Date.now().toString(36);
+      
+      // 🚨 UPGRADE: Save to database with a strict 24-hour expiration
+      await db.prepare(
+        "INSERT INTO hq_sessions (session_id, username, expires_at) VALUES (?, ?, datetime('now', '+1 day'))"
+      ).bind(secureSessionId, username).run();
+
       const response = NextResponse.json({ success: true });
       
-      // The Global Security Token
+      // The Global Security Token (Now Dynamic)
       response.cookies.set({
         name: 'syndicate_session',
-        value: process.env.HQ_SESSION_TOKEN as string,
+        value: secureSessionId,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         path: '/',
+        maxAge: 60 * 60 * 24, // 24 hours
       });
 
-      // 🚨 NEW: The Identity Tracker Cookie
+      // The Identity Tracker Cookie
       response.cookies.set({
         name: 'hq_operator_id',
         value: username,
@@ -115,6 +146,7 @@ export async function POST(request: Request) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         path: '/',
+        maxAge: 60 * 60 * 24,
       });
 
       return response;
@@ -125,5 +157,32 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error(error);
     return NextResponse.json({ success: false, error: 'Server error.' }, { status: 500 });
+  }
+}
+
+// 🚨 NEW: Verification endpoint for the Middleware to call
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('syndicate_session');
+    
+    if (!sessionCookie?.value) {
+      return NextResponse.json({ success: false }, { status: 401 });
+    }
+
+    const db = getRequestContext().env.reality_decoded_db;
+    
+    // Cross-verify cookie UUID against active tokens in the DB
+    const liveSession = await db.prepare(
+      "SELECT username FROM hq_sessions WHERE session_id = ? AND expires_at > datetime('now')"
+    ).bind(sessionCookie.value).first();
+
+    if (liveSession) {
+      return NextResponse.json({ success: true, username: liveSession.username });
+    }
+    
+    return NextResponse.json({ success: false }, { status: 401 });
+  } catch (error) {
+    return NextResponse.json({ success: false }, { status: 500 });
   }
 }

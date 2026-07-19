@@ -91,7 +91,9 @@ function WriterWorkbench() {
   
   const [agentId, setAgentId] = useState("");
   const [agents, setAgents] = useState<{id: string, name: string}[]>([]);
-  const [isPublished, setIsPublished] = useState(false);
+  
+  // 🚨 UPGRADE: Advanced State Tracking (Draft vs Published vs Scheduled)
+  const [articleStatus, setArticleStatus] = useState<string>("draft");
 
   const [, setForceUpdate] = useState(0);
   const [modal, setModal] = useState<{isOpen: boolean, type: 'link' | 'image' | 'youtube', url: string}>({ isOpen: false, type: 'link', url: '' });
@@ -119,7 +121,6 @@ function WriterWorkbench() {
     onTransaction: () => setForceUpdate(prev => prev + 1)
   });
 
-  // 🚨 SURGICAL UPDATE: This useEffect now fetches the logged-in agent securely
   useEffect(() => {
     Promise.all([
       fetch('/api/agents').then(res => res.json()),
@@ -138,9 +139,10 @@ function WriterWorkbench() {
               setTags(data.article.tags || "");
               setArticleId(data.article.id);
               setExcerpt(data.article.excerpt || '');
-              
               setAgentId(data.article.agent_id || "");
-              setIsPublished(data.article.status === 'published');
+              
+              // 🚨 FIX: Sets the exact status so the buttons render correctly
+              setArticleStatus(data.article.status);
 
               const saved = localStorage.getItem(storageKey);
               if (saved && editor && editor.isEmpty) {
@@ -155,7 +157,6 @@ function WriterWorkbench() {
             }
           });
       } else {
-        // 🚨 AUTO-ASSIGN IDENTITY: If it's a new post, select the current user in the dropdown!
         if (meData && meData.id) {
           setAgentId(meData.id);
         }
@@ -213,14 +214,14 @@ function WriterWorkbench() {
     setModal({ ...modal, isOpen: false, url: '' });
   };
 
-  const handleServerAction = async (status: 'draft' | 'pending' | 'published') => {
+  const handleServerAction = async (targetStatus: 'draft' | 'pending' | 'published' | 'scheduled') => {
     if (!editor || !title) {
       alert("A title is required to save to the mainframe.");
       return;
     }
 
     const cleanedTags = sanitizeTags(tags);
-    setSaveStatus(status === 'draft' ? "Encrypting to Server..." : "Transmitting to HQ...");
+    setSaveStatus(targetStatus === 'draft' ? "Encrypting to Server..." : "Transmitting to HQ...");
     
     try {
       const response = await fetch('/api/editor', {
@@ -232,7 +233,7 @@ function WriterWorkbench() {
           category,
           tags: cleanedTags,
           content: editor.getHTML(),
-          status,
+          status: targetStatus,
           agent_id: agentId || null, 
           excerpt,
         })
@@ -243,13 +244,13 @@ function WriterWorkbench() {
       if (result.success && result.id) {
         setArticleId(result.id); 
         
-        if (status === 'published') {
+        if (targetStatus === 'published' || targetStatus === 'scheduled') {
            setSaveStatus("Live File Updated Successfully");
         } else {
-           setSaveStatus(status === 'draft' ? "Draft secured in Mainframe" : "Transmitted to HQ Queue");
+           setSaveStatus(targetStatus === 'draft' ? "Draft secured in Mainframe" : "Transmitted to HQ Queue");
         }
         
-        if (status === 'pending' || status === 'published') {
+        if (targetStatus !== 'draft') {
           localStorage.removeItem(storageKey);
           setTimeout(() => window.location.href = '/hq', 1500); 
         }
@@ -362,7 +363,7 @@ function WriterWorkbench() {
               <select
                 value={agentId}
                 onChange={(e) => setAgentId(e.target.value)}
-                disabled={isPublished}
+                disabled={articleStatus === 'published' || articleStatus === 'scheduled'}
                 className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed appearance-none tracking-widest uppercase text-sm"
               >
                 <option value="">-- UNASSIGNED --</option>
@@ -370,7 +371,7 @@ function WriterWorkbench() {
                   <option key={agent.id} value={agent.id}>{agent.name}</option>
                 ))}
               </select>
-              {isPublished && <span className="text-[10px] text-purple-400 tracking-widest uppercase">File Published: Agent assignment locked.</span>}
+              {(articleStatus === 'published' || articleStatus === 'scheduled') && <span className="text-[10px] text-purple-400 tracking-widest uppercase">File Live/Scheduled: Agent assignment locked.</span>}
             </div>
           </div>
 
@@ -384,12 +385,20 @@ function WriterWorkbench() {
           <div className="flex justify-end gap-4 mt-8">
             <Link href="/hq" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-purple-400 transition-colors uppercase tracking-widest font-bold"><ArrowLeft size={14} /> Return to HQ</Link>
             
-            {isPublished ? (
+            {/* 🚨 FIX: Context Aware Buttons that break the downgrade loop! */}
+            {articleStatus === 'published' ? (
               <button 
                 onClick={() => handleServerAction('published')} 
                 className="px-8 py-3 rounded-lg text-xs tracking-widest uppercase bg-purple-600 hover:bg-purple-500 text-white font-bold transition-colors shadow-[0_0_15px_rgba(168,85,247,0.4)]"
               >
                 Update Live File
+              </button>
+            ) : articleStatus === 'scheduled' ? (
+              <button 
+                onClick={() => handleServerAction('scheduled')} 
+                className="px-8 py-3 rounded-lg text-xs tracking-widest uppercase bg-yellow-600 hover:bg-yellow-500 text-white font-bold transition-colors shadow-[0_0_15px_rgba(202,138,4,0.4)]"
+              >
+                Update Scheduled File
               </button>
             ) : (
               <>

@@ -20,9 +20,20 @@ const stripHtml = (html: string) => {
 export default async function PublicBlogFeed() {
   const db = (getRequestContext().env as any).reality_decoded_db;
   
-  const { results: articles } = await db.prepare(
-    "SELECT * FROM articles WHERE status = 'published' ORDER BY created_at DESC"
-  ).all();
+  // 🚨 UPGRADE: Fetch both published and scheduled, then filter in JS to bypass SQLite timezone gaps
+  const { results: allArticles } = await db.prepare(`
+    SELECT * FROM articles 
+    WHERE status IN ('published', 'scheduled') 
+    ORDER BY created_at DESC
+  `).all();
+
+  const now = new Date();
+  
+  // Filter using JavaScript local time
+  const articles = allArticles.filter((a: any) => 
+    a.status === 'published' || 
+    (a.status === 'scheduled' && new Date(a.scheduled_for) <= now)
+  );
 
   return (
     <main className="min-h-screen bg-[#050505] text-white pt-32 pb-20 px-6 font-mono relative overflow-hidden">

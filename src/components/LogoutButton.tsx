@@ -12,12 +12,19 @@ export default function LogoutButton() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/hq/login');
-      router.refresh();
+      // UPGRADED: Pointing to the main auth route and sending the logout action
+      await fetch('/api/auth', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'logout' })
+      });
+      
+      // UPGRADED: Using window.location forces a hard reset of the browser cache and Next.js router
+      window.location.href = '/hq/login';
     } catch (e) {
       console.error('Failed to disconnect:', e);
       setIsLoggingOut(false);
+      setIsConfirming(false);
     }
   };
 

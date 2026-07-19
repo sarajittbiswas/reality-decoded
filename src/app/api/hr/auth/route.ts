@@ -10,6 +10,7 @@ const otpStore = new Map();
 export async function POST(req: Request) {
   const db = (getRequestContext().env as any).reality_decoded_db;
   const { action, email, password, otp } = await req.json();
+  const cookieStore = await cookies();
 
   // STEP 1: VERIFY DB CREDENTIALS & SEND OTP
   if (action === 'login') {
@@ -43,14 +44,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'Invalid Credentials' }, { status: 401 });
   }
 
-  // STEP 2: VERIFY OTP & SET COOKIE
+  // STEP 2: VERIFY OTP & GENERATE SECURE SESSION
   if (action === 'verify') {
     if (otpStore.get(email) === otp) {
       otpStore.delete(email); 
       
-      const cookieStore = await cookies();
-      cookieStore.set('hr_session', 'authenticated', { 
-        httpOnly: true, secure: true, maxAge: 60 * 60 * 24 
+      // UPGRADE: Generate unique 128-bit UUID for the session
+      const secureSessionId = crypto.randomUUID();
+      
+      // UPGRADE: Save to database with a strict 24-hour expiration
+      await db.prepare(
+        "INSERT INTO hr_sessions (session_id, email, expires_at) VALUES (?, ?, datetime('now', '+1 day'))"
+      ).bind(secureSessionId, email).run();
+
+      // Set the dynamic UUID in the cookie instead of a static word
+      cookieStore.set('hr_session', secureSessionId, { 
+        httpOnly: true, 
+        secure: true, 
+        maxAge: 60 * 60 * 24,
+        path: '/'
       });
 
       return NextResponse.json({ success: true });
@@ -58,19 +70,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'Invalid OTP' }, { status: 401 });
   }
 
-  // STEP 3: LOGOUT
+  // STEP 3: LOGOUT & DESTROY SESSION
   if (action === 'logout') {
-    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('hr_session');
+    
+    // UPGRADE: Delete the session from the database so the token can never be reused
+    if (sessionCookie?.value) {
+      await db.prepare("DELETE FROM hr_sessions WHERE session_id = ?").bind(sessionCookie?.value).run();
+    }
+    
+    // Clear the browser cookie
     cookieStore.delete('hr_session');
     return NextResponse.json({ success: true });
   }
 }
+
+// STEP 4: VERIFY ACTIVE SESSION (GET ROUTE)
 export async function GET() {
   const cookieStore = await cookies();
-  const session = cookieStore.get('hr_session');
+  const sessionCookie = cookieStore.get('hr_session');
   
-  if (session?.value === 'authenticated') {
+  if (!sessionCookie?.value) {
+    return NextResponse.json({ success: false }, { status: 401 });
+  }
+
+  // UPGRADE: Validate the cookie's UUID against the live database sessions
+  const db = (getRequestContext().env as any).reality_decoded_db;
+  const liveSession = await db.prepare(
+    "SELECT email FROM hr_sessions WHERE session_id = ? AND expires_at > datetime('now')"
+  ).bind(sessionCookie.value).first();
+
+  if (liveSession) {
     return NextResponse.json({ success: true });
   }
+  
+  // If token is invalid or expired, reject access
   return NextResponse.json({ success: false }, { status: 401 });
 }

@@ -4,6 +4,7 @@ import { Space_Grotesk } from 'next/font/google';
 import type { Metadata } from 'next';
 import Interactions from '@/components/Interactions';
 import ScrollProgress from '@/components/ScrollProgress';
+import ViewTracker from '@/components/ViewTracker';
 import Link from 'next/link';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
@@ -24,7 +25,7 @@ const calculateReadingTime = (text: string) => {
   return `${minutes} MIN READ`;
 };
 
-// 🚨 AUTOMATED DYNAMIC SEO METADATA GENERATOR (Next.js 15 Promise Params Compatible)
+// 🚨 AUTOMATED DYNAMIC SEO METADATA GENERATOR
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   try {
     const resolvedParams = await params;
@@ -84,22 +85,36 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   const db = (getRequestContext().env as any).reality_decoded_db;
   
   // 1. Fetch the main article with agent credentials
+  // 🚨 UPGRADE: Fetch if published OR scheduled, then verify time in JS to bypass UTC gap
   const article = await db.prepare(`
     SELECT articles.*, syndicate_agents.name as agent_name, syndicate_agents.avatar as agent_avatar
     FROM articles 
     LEFT JOIN syndicate_agents ON articles.agent_id = syndicate_agents.id
-    WHERE slug = ? AND status = 'published'
+    WHERE slug = ? AND status IN ('published', 'scheduled')
   `).bind(slug).first();
 
   if (!article) notFound();
+
+  // The ultimate Timezone un-blocker
+  const now = new Date();
+  const isLive = article.status === 'published' || (article.status === 'scheduled' && new Date(article.scheduled_for as string) <= now);
+  
+  if (!isLive) notFound();
 
   // Determine if it's a clean team post or a user submission
   const isTeamArticle = article.author === 'Syndicate Admin';
 
   // 2. Fetch 3 related articles (excluding current article)
-  const { results: relatedArticles } = await db.prepare(
-    "SELECT * FROM articles WHERE slug != ? AND status = 'published' ORDER BY created_at DESC LIMIT 3"
-  ).bind(slug).all();
+  const { results: allRelated } = await db.prepare(`
+    SELECT * FROM articles 
+    WHERE slug != ? AND status IN ('published', 'scheduled') 
+    ORDER BY created_at DESC
+  `).bind(slug).all();
+
+  // Filter related articles using the same JS timezone logic
+  const relatedArticles = allRelated.filter((a: any) => 
+    a.status === 'published' || (a.status === 'scheduled' && new Date(a.scheduled_for) <= now)
+  ).slice(0, 3);
 
   const heroImage = getFirstImage(article.content) || 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000&auto=format&fit=crop';
   const readTime = calculateReadingTime(article.content);
@@ -111,6 +126,10 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] pt-32 pb-24 relative font-mono">
+      
+      {/* 🚨 THE VIEW TRACKER: Silently pings your DB on load! */}
+      <ViewTracker slug={slug} />
+
       <ScrollProgress />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[50%] h-[30%] bg-purple-900/10 blur-[120px] pointer-events-none z-0"></div>
 
@@ -162,9 +181,11 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
         </div>
 
         <div className="max-w-3xl mx-auto bg-[#111111]/50 backdrop-blur-sm border border-white/5 p-8 md:p-12 rounded-2xl shadow-xl">
+          
+          {/* THE EDITOR CONTENT IS INJECTED HERE! */}
           <div 
             className="syndicate-prose mb-12"
-            dangerouslySetInnerHTML={{ __html: article.content }} 
+            dangerouslySetInnerHTML={{ __html: article.content as string }} 
           />
 
           <div className="border-t border-white/10 pt-8 mb-12">
@@ -181,7 +202,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
             </div>
           </div>
           
-          <Interactions id={`blog-${slug}`} title={article.title} />
+          <Interactions id={`blog-${slug}`} title={article.title as string} />
         </div>
 
         <div className="max-w-3xl mx-auto mt-12 pt-8 flex items-center justify-between mb-16 border-t border-white/5">
@@ -222,7 +243,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
         )}
       </article>
 
-      {/* SERVER COMPONENT CSS INJECTION */}
+      {/* TIPTAP CSS STYLES (100% PRESERVED) */}
       <style dangerouslySetInnerHTML={{ __html: `
         .syndicate-prose {
           color: #e5e7eb;
@@ -240,23 +261,28 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
         .syndicate-prose h2 { font-size: 1.875rem; }
         .syndicate-prose h3 { font-size: 1.5rem; }
         .syndicate-prose p { margin-bottom: 1.5em; }
+        
         .syndicate-prose strong, .syndicate-prose b { 
           font-weight: bold !important; 
           color: #ffffff !important; 
         }
+        
         .syndicate-prose em, .syndicate-prose i { 
           font-style: italic !important; 
         }
+        
         .syndicate-prose ul { 
           list-style-type: disc !important; 
           padding-left: 1.5rem !important; 
           margin-bottom: 1.5em; 
         }
+        
         .syndicate-prose ol { 
           list-style-type: decimal !important; 
           padding-left: 1.5rem !important; 
           margin-bottom: 1.5em; 
         }
+        
         .syndicate-prose blockquote {
           border-left: 4px solid #a855f7;
           padding: 0.5rem 0 0.5rem 1.25rem;
@@ -265,17 +291,20 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           background: rgba(168,85,247,0.05);
           border-radius: 0 0.5rem 0.5rem 0;
         }
+        
         .syndicate-prose a { 
           color: #c084fc; 
           text-decoration: underline; 
           text-underline-offset: 4px;
         }
+        
         .syndicate-prose img { 
           width: 100%; 
           border-radius: 0.75rem; 
           margin: 2rem 0; 
           border: 1px solid rgba(255,255,255,0.1); 
         }
+        
         .syndicate-prose iframe { 
           width: 100%; 
           aspect-ratio: 16/9; 
