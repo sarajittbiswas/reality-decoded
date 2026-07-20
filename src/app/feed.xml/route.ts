@@ -7,22 +7,34 @@ export async function GET() {
   const db = (getRequestContext().env as any).reality_decoded_db;
   const siteUrl = 'https://realitydecoded.in';
 
-  // 1. Fetch the 20 most recent LIVE articles
-const { results: articles } = await db.prepare(`
-  SELECT title, slug, excerpt, created_at, author 
-  FROM articles 
-  WHERE (status = 'published') 
-  OR (status = 'scheduled' AND created_at <= datetime('now')) 
-  ORDER BY created_at DESC 
-  LIMIT 20
-`).all();
+  // 1. Fetch articles but remove the time math from SQL to prevent early leaks
+  const { results: allArticles } = await db.prepare(`
+    SELECT title, slug, excerpt, created_at, scheduled_for, status, author 
+    FROM articles 
+    WHERE status IN ('published', 'scheduled') 
+    ORDER BY created_at DESC 
+  `).all();
 
   const { results: videos } = await db.prepare(
     "SELECT id, title, description, created_at FROM videos ORDER BY created_at DESC LIMIT 20"
   ).all();
 
+  // 🚨 THE FIX: Exact same time check logic as your frontend
+  const getISTDate = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    return new Date(dateStr.replace(' ', 'T') + '+05:30');
+  };
+
+  const now = new Date();
+  
+  // Filter articles based on their scheduled_for time in IST
+  const validArticles = allArticles.filter((a: any) => 
+    a.status === 'published' || 
+    (a.status === 'scheduled' && getISTDate(a.scheduled_for) <= now)
+  ).slice(0, 20); // Keep it to 20 for the feed
+
   // 2. Normalize
-  const articleItems = articles.map((a: any) => ({
+  const articleItems = validArticles.map((a: any) => ({
     title: a.title,
     url: `${siteUrl}/blogs/${a.slug}`,
     description: a.excerpt || 'Transmission from Reality Decoded.',
