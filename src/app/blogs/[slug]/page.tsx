@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import Interactions from '@/components/Interactions';
 import ScrollProgress from '@/components/ScrollProgress';
 import ViewTracker from '@/components/ViewTracker';
+import AuthorHoverCard from '@/components/AuthorHoverCard';
 import Link from 'next/link';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
@@ -91,16 +92,20 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
 
   const db = (getRequestContext().env as any).reality_decoded_db;
   
+  // 🚨 UPGRADE: Fetch ALL agent profile columns for the Hover Card
   const article = await db.prepare(`
-    SELECT articles.*, syndicate_agents.name as agent_name, syndicate_agents.avatar as agent_avatar
+    SELECT articles.*, 
+           sa.id as agent_id, sa.name as agent_name, sa.avatar as agent_avatar, 
+           sa.role as agent_role, sa.location as agent_location, sa.timezone as agent_timezone, 
+           sa.website as agent_website, sa.github as agent_github, sa.twitter as agent_twitter, 
+           sa.linkedin as agent_linkedin, sa.instagram as agent_instagram, sa.facebook as agent_facebook, sa.reddit as agent_reddit
     FROM articles 
-    LEFT JOIN syndicate_agents ON articles.agent_id = syndicate_agents.id
+    LEFT JOIN syndicate_agents sa ON articles.agent_id = sa.id
     WHERE slug = ? AND status IN ('published', 'scheduled')
   `).bind(slug).first();
 
   if (!article) notFound();
 
-  // TIMEZONE FIX: Force Cloudflare to read the date string as IST (+05:30)
   const getISTDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return new Date();
     return new Date(dateStr.replace(' ', 'T') + '+05:30');
@@ -111,10 +116,33 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   
   if (!isLive) notFound();
 
+  // Create the agent object for the HoverCard
+  const mainAgentObj = article.agent_id ? {
+    id: article.agent_id,
+    name: article.agent_name,
+    avatar: article.agent_avatar,
+    role: article.agent_role,
+    location: article.agent_location,
+    timezone: article.agent_timezone,
+    github: article.agent_github,
+    twitter: article.agent_twitter,
+    linkedin: article.agent_linkedin,
+    instagram: article.agent_instagram,
+    facebook: article.agent_facebook,
+    reddit: article.agent_reddit
+  } : null;
+
   const isTeamArticle = article.author === 'Syndicate Admin';
 
+  // 🚨 UPGRADE: Fetch ALL agent profile columns for the Related Articles
   const { results: allRelated } = await db.prepare(`
-    SELECT * FROM articles 
+    SELECT articles.*, 
+           sa.id as agent_id, sa.name as agent_name, sa.avatar as agent_avatar, 
+           sa.role as agent_role, sa.location as agent_location, sa.timezone as agent_timezone, 
+           sa.website as agent_website, sa.github as agent_github, sa.twitter as agent_twitter, 
+           sa.linkedin as agent_linkedin, sa.instagram as agent_instagram, sa.facebook as agent_facebook, sa.reddit as agent_reddit
+    FROM articles 
+    LEFT JOIN syndicate_agents sa ON articles.agent_id = sa.id
     WHERE slug != ? AND status IN ('published', 'scheduled') 
     ORDER BY created_at DESC
   `).bind(slug).all();
@@ -168,17 +196,23 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           </h1>
           
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500 font-mono uppercase tracking-widest">
-            {article.agent_name ? (
-              <div className="flex items-center gap-2">
-                <img src={article.agent_avatar} alt="Agent Avatar" className="w-6 h-6 rounded-full border border-purple-500/50 shadow-[0_0_10px_purple]" />
-                <span className="text-purple-400 font-bold">
-                  {isTeamArticle 
-                    ? `By Syndicate Agent, ${article.agent_name}` 
-                    : `By ${article.author} • Modified by ${article.agent_name}`}
-                </span>
-              </div>
+            
+            {/* 🚨 UPGRADE: Hover Card dynamically wrapping the Author link */}
+            {mainAgentObj ? (
+              <AuthorHoverCard agent={mainAgentObj}>
+                <Link href={`/author/${mainAgentObj.id}`} className="flex items-center gap-2 group/author hover:opacity-80 transition-all py-1">
+                  <img src={mainAgentObj.avatar} alt={mainAgentObj.name} className="w-6 h-6 rounded-full border border-purple-500/50 shadow-[0_0_10px_purple] group-hover/author:border-purple-400 transition-colors" />
+                  <span className="text-purple-400 font-bold group-hover/author:text-purple-300 transition-colors">
+                    {isTeamArticle 
+                      ? `By Syndicate Agent, ${mainAgentObj.name}` 
+                      : `By ${article.author} • Modified by ${mainAgentObj.name}`}
+                  </span>
+                </Link>
+              </AuthorHoverCard>
             ) : (
-              <span className="text-purple-400 font-bold">By {article.author}</span>
+              <Link href={`/author/${encodeURIComponent(article.author as string)}`} className="text-purple-400 font-bold hover:text-purple-300 transition-colors">
+                By {article.author}
+              </Link>
             )}
 
             <span>•</span>
@@ -196,7 +230,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
            <div className="absolute inset-0 bg-purple-900/20 mix-blend-overlay z-10"></div>
            <img 
              src={heroImage} 
-             alt={article.title} 
+             alt={article.title as string} 
              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
            />
         </div>
@@ -233,6 +267,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           <span className="text-[10px] text-gray-600 uppercase tracking-widest">End of Transmission</span>
         </div>
 
+        {/* RELATED INTELLIGENCE SECTION */}
         {relatedArticles.length > 0 && (
           <div className="border-t border-white/5 pt-12 relative z-10 max-w-4xl mx-auto">
             <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-white uppercase mb-8 flex items-center gap-3`}>
@@ -243,16 +278,42 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {relatedArticles.map((related: any) => {
                 const relatedThumb = getFirstImage(related.content) || 'https://images.unsplash.com/photo-1614064010834-58e1c68b6b0b?q=80&w=1000&auto=format&fit=crop';
+                
+                // Construct the agent object for the related card
+                const relAgentObj = related.agent_id ? {
+                  id: related.agent_id, name: related.agent_name, avatar: related.agent_avatar, 
+                  role: related.agent_role, location: related.agent_location, timezone: related.agent_timezone, 
+                  github: related.agent_github, twitter: related.agent_twitter, linkedin: related.agent_linkedin, 
+                  instagram: related.agent_instagram, facebook: related.agent_facebook, reddit: related.agent_reddit
+                } : null;
+
                 return (
                   <Link href={`/blogs/${related.slug}`} key={related.slug} className="group block h-full">
                     <div className="bg-[#111] border border-white/5 rounded-xl p-5 h-full flex flex-col hover:border-purple-500/50 hover:bg-[#161616] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(168,85,247,0.15)]">
                       <div className="relative aspect-video w-full rounded-lg overflow-hidden mb-4 border border-white/5 bg-black">
                          <img src={relatedThumb} alt={related.title} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity duration-700" />
                       </div>
+                      
                       <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-2 block">{related.category || 'INTEL'}</span>
                       <h4 className={`${spaceGrotesk.className} font-bold text-gray-200 group-hover:text-white line-clamp-2 text-sm md:text-base leading-snug mb-4`}>
                         {related.title}
                       </h4>
+
+                      <div className="mt-auto border-t border-white/5 pt-3 flex items-center justify-between">
+                        {relAgentObj ? (
+                          <AuthorHoverCard agent={relAgentObj}>
+                            <div className="flex items-center gap-2 group/relauth">
+                              <img src={relAgentObj.avatar || '/default-cover.png'} className="w-5 h-5 rounded-full border border-purple-500/30 group-hover/relauth:border-purple-400 transition-colors" />
+                              <span className="text-[10px] text-gray-400 group-hover/relauth:text-white uppercase tracking-widest font-bold transition-colors">{relAgentObj.name.split(' ')[0]}</span>
+                            </div>
+                          </AuthorHoverCard>
+                        ) : (
+                          <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">By {related.author}</span>
+                        )}
+                        <span className="text-[10px] font-bold text-gray-500 group-hover:text-purple-400 transition-colors uppercase tracking-widest">
+                          &rarr;
+                        </span>
+                      </div>
                     </div>
                   </Link>
                 );

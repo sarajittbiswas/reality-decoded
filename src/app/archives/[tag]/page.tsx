@@ -1,34 +1,32 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { Space_Grotesk } from 'next/font/google';
+import AuthorHoverCard from '@/components/AuthorHoverCard';
 import Link from 'next/link';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 export const runtime = 'edge';
 
-// ==========================================
-// TIMEZONE FIX FOR DEPLOYMENTS
-// ==========================================
 const getISTDate = (dateStr: string) => {
   if (!dateStr) return new Date();
   return new Date(dateStr.replace(' ', 'T') + '+05:30');
 };
 
-// ==========================================
-// MAIN ARCHIVE COMPONENT
-// ==========================================
 export default async function TagArchivePage({ params }: { params: Promise<{ tag: string }> }) {
-   
    const { tag } = await params;
    const decodedTag = decodeURIComponent(tag).replace(/^_/, '').trim();
-   
    const db = (getRequestContext().env as any).reality_decoded_db;
   
-  // 🚨 THE BUG FIX: The query now universally searches BOTH the 'category' and 'tags' columns!
   const searchQuery = decodedTag.toLowerCase();
   const likeQuery = `%,${searchQuery},%`;
 
   const { results: allArticles } = await db.prepare(
-    `SELECT * FROM articles 
+    `SELECT articles.*, 
+           sa.id as agent_id, sa.name as agent_name, sa.avatar as agent_avatar, 
+           sa.role as agent_role, sa.location as agent_location, sa.timezone as agent_timezone, 
+           sa.website as agent_website, sa.github as agent_github, sa.twitter as agent_twitter, 
+           sa.linkedin as agent_linkedin, sa.instagram as agent_instagram, sa.facebook as agent_facebook, sa.reddit as agent_reddit
+     FROM articles 
+     LEFT JOIN syndicate_agents sa ON articles.agent_id = sa.id
      WHERE status IN ('published', 'scheduled') 
      AND (
        LOWER(category) = ? 
@@ -37,7 +35,6 @@ export default async function TagArchivePage({ params }: { params: Promise<{ tag
      ORDER BY created_at DESC`
   ).bind(searchQuery, likeQuery).all();
 
-  // Filter using JavaScript IST Time to ensure scheduled posts only un-hide exactly on time
   const now = new Date();
   const articles = allArticles.filter((a: any) => 
     a.status === 'published' || 
@@ -62,30 +59,60 @@ export default async function TagArchivePage({ params }: { params: Promise<{ tag
           {articles.length === 0 ? (
             <p className="text-gray-500 col-span-full">No transmissions found for this parameter.</p>
           ) : (
-            articles.map((article: any) => (
-              <Link href={`/blogs/${article.slug}`} key={article.id} className="group block bg-[#111] border border-white/5 rounded-2xl overflow-hidden hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all duration-300">
-                <div className="p-6">
+            articles.map((article: any) => {
+              
+              const agentObj = article.agent_id ? {
+                id: article.agent_id, name: article.agent_name, avatar: article.agent_avatar, 
+                role: article.agent_role, location: article.agent_location, timezone: article.agent_timezone, 
+                github: article.agent_github, twitter: article.agent_twitter, linkedin: article.agent_linkedin, 
+                instagram: article.agent_instagram, facebook: article.agent_facebook, reddit: article.agent_reddit
+              } : null;
+
+              return (
+                <Link href={`/blogs/${article.slug}`} key={article.id} className="relative group block bg-[#111] border border-white/5 rounded-2xl hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all duration-300 flex flex-col hover:z-50">
                   
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold uppercase tracking-widest text-purple-400">{article.category}</span>
-                    <span className="text-xs text-gray-500">{new Date(article.created_at).toLocaleDateString()}</span>
-                  </div>
-                  
-                  <h2 className={`${spaceGrotesk.className} text-xl font-bold text-gray-200 mb-3 group-hover:text-white transition-colors`}>
-                    {article.title}
-                  </h2>
-                  
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {(article.tags || '').split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string, i: number) => (
-                      <span key={i} className="text-[10px] uppercase tracking-widest border border-white/10 px-2 py-1 rounded text-gray-400 group-hover:border-purple-500/30 group-hover:text-purple-300">
-                        {t}
+                  <div className="p-6 flex flex-col h-full rounded-2xl bg-[#111] group-hover:bg-[#151515] transition-colors">
+                    
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-xs font-bold uppercase tracking-widest text-purple-400">{article.category}</span>
+                      <span className="text-xs text-gray-500">{new Date(article.created_at).toLocaleDateString()}</span>
+                    </div>
+                    
+                    <h2 className={`${spaceGrotesk.className} text-xl font-bold text-gray-200 mb-3 group-hover:text-white transition-colors flex-grow`}>
+                      {article.title}
+                    </h2>
+                    
+                    <div className="flex flex-wrap gap-2 mt-2 mb-4">
+                      {(article.tags || '').split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string, i: number) => (
+                        <span key={i} className="text-[10px] uppercase tracking-widest border border-white/10 px-2 py-1 rounded text-gray-400 group-hover:border-purple-500/30 group-hover:text-purple-300">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-auto border-t border-white/5 pt-4">
+                      {agentObj ? (
+                        /* 🚨 THE FIX: Wrapper DIV removed here! */
+                        <AuthorHoverCard agent={agentObj}>
+                          <div className="flex items-center gap-2 group/authcard">
+                            <img src={agentObj.avatar || '/default-cover.png'} className="w-5 h-5 rounded-full border border-purple-500/30 group-hover/authcard:border-purple-400 transition-colors" />
+                            <span className="text-[10px] text-gray-400 group-hover/authcard:text-white uppercase tracking-widest font-bold transition-colors">
+                              {agentObj.name.split(' ')[0]}
+                            </span>
+                          </div>
+                        </AuthorHoverCard>
+                      ) : (
+                        <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">By {article.author}</span>
+                      )}
+                      <span className="text-[10px] font-bold text-gray-500 group-hover:text-purple-400 transition-colors uppercase tracking-widest">
+                        &rarr;
                       </span>
-                    ))}
+                    </div>
+
                   </div>
-                  
-                </div>
-              </Link>
-            ))
+                </Link>
+              );
+            })
           )}
         </div>
         

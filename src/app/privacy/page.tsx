@@ -1,5 +1,5 @@
 import { Space_Grotesk } from 'next/font/google';
-
+import AskAI from '@/components/AskAI';
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export default function PrivacyPage() {
@@ -28,63 +28,76 @@ export default function PrivacyPage() {
             Last Updated: July 2026
           </p>
         </div>
-
+<AskAI />
         {/* Document Body */}
         <div className="bg-[#111111]/50 backdrop-blur-xl border border-white/5 p-8 md:p-14 rounded-3xl shadow-2xl space-y-12 relative overflow-hidden group">
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent z-20"></div>
 
           <section className="relative pl-6 border-l-2 border-purple-500/20 hover:border-purple-500 transition-colors duration-300">
             <div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-purple-500/50"></div>
-            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>1. Our Commitment to Privacy</h3>
+            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>1. Our Commitment to Data Integrity</h3>
             <p className="leading-relaxed text-gray-400 font-light">
-              At Reality Decoded, truth is our currency, but security is our foundation. This Privacy Policy explains how we collect, use, and protect your information when you visit our website, consume our content, or submit intelligence through our Secure Drop portal.
+              At Reality Decoded, truth is our currency, but security is our foundation. This Privacy Policy is a formal disclosure of how we manage, store, and protect your digital footprint within our mainframe. When you access our investigative archive, you are engaging with a network that prioritizes data sovereignty and operational security. This policy covers all data interactions, whether you are a passive observer or an active whistleblower.
             </p>
           </section>
 
           <section className="relative pl-6 border-l-2 border-purple-500/20 hover:border-purple-500 transition-colors duration-300">
             <div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-purple-500/50"></div>
-            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>2. Information We Collect</h3>
+            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>2. Information Collection Protocols</h3>
+            <p className="leading-relaxed text-gray-400 font-light mb-6">
+              <strong>Passive Telemetry:</strong> Like all sophisticated digital architectures, our servers automatically capture non-personally identifying information. This typically includes browser configurations, language preferences, referring nodes, the date/time of your request, and the specific architecture of the device you are using to access our network. We process this strictly to optimize our delivery systems and ensure compatibility across all digital platforms.
+            </p>
+            <p className="leading-relaxed text-gray-400 font-light">
+              <strong>User-Provided Intel:</strong> If you voluntarily provide information via our contact forms, newsletter subscription, or secure submission channels, we retain only the data you explicitly provide. This information is treated as a classified asset.
+            </p>
+          </section>
+
+          <section className="relative pl-6 border-l-2 border-purple-500/20 hover:border-purple-500 transition-colors duration-300">
+            <div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-purple-500/50"></div>
+            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>3. Cookie & AdSense Disclosure</h3>
             <p className="leading-relaxed text-gray-400 font-light mb-4">
-              <strong className="text-purple-300 font-mono text-sm uppercase tracking-wider block mb-1">A. Passive Information</strong> 
-              Like most digital platforms, we collect non-personally identifying information that web browsers and servers typically make available, such as browser type, language preference, and the date/time of each visitor request. We use this exclusively to understand how visitors use our website.
+              To sustain the high-fidelity production of our investigations, we utilize third-party advertising services, including Google AdSense. These vendors serve advertisements based on your activity, both on Reality Decoded and across the wider internet. 
             </p>
-            <p className="leading-relaxed text-gray-400 font-light">
-              <strong className="text-purple-300 font-mono text-sm uppercase tracking-wider block mb-1">B. Submitted Information</strong> 
-              If you use our Contact form or Secure Drop portal, we collect the exact information you choose to provide. 
+            <p className="leading-relaxed text-gray-400 font-light mb-4">
+              Specifically, Google uses the DART cookie to serve ads based on user interest data. Users have the right to opt out of the use of the DART cookie by visiting the <a href="https://policies.google.com/technologies/ads" className="text-purple-400 hover:text-purple-300 underline">Google ad and content network privacy policy</a>. Our reliance on these cookies is purely for operational sustainability, and we do not influence the specific ad content served to you by these third parties.
             </p>
           </section>
 
           <section className="relative pl-6 border-l-2 border-purple-500/20 hover:border-purple-500 transition-colors duration-300">
             <div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-purple-500/50"></div>
-            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>3. Whistleblower & Source Protection</h3>
+            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>4. Whistleblower Protection</h3>
             <p className="leading-relaxed text-gray-400 font-light">
-              When utilizing our Secure Drop portal to share stories or upload files, you have the right to remain entirely anonymous. We do not log IP addresses on the Secure Drop submission endpoint. Any files or communications sent to us are treated with the highest degree of confidentiality and journalistic privilege. If you choose not to provide an alias or email, we will have no way to trace the submission back to you.
+              We operate a Secure Drop facility for field operatives. Submissions made through these encrypted pipelines do not log originating IP addresses. We guarantee that such communications are treated with the highest level of journalistic privilege. We will not compromise the identity of our confidential sources. We are committed to the protection of our intelligence assets at all costs.
             </p>
           </section>
 
           <section className="relative pl-6 border-l-2 border-purple-500/20 hover:border-purple-500 transition-colors duration-300">
             <div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-purple-500/50"></div>
-            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>4. Data Sharing and Disclosure</h3>
+            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>5. Data Disclosure</h3>
             <p className="leading-relaxed text-gray-400 font-light">
-              We do not sell, rent, or trade your personal information to third parties. We will only disclose information if absolutely required to do so by a binding legal subpoena, and even then, we will aggressively fight to protect the identities of our confidential sources to the maximum extent permitted by law.
+              Reality Decoded maintains a "zero-trade" policy regarding your data. We do not sell, rent, or distribute personal information to third-party data brokers. Disclosure of information will only occur if we are served with a valid, legally binding court order or subpoena. In such instances, we retain the right to challenge such requests to the maximum extent of the law to safeguard the interests of our users and contributors.
             </p>
           </section>
 
           <section className="relative pl-6 border-l-2 border-purple-500/20 hover:border-purple-500 transition-colors duration-300">
-            <div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-purple-500/50"></div>
-            <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>5. Contact Us</h3>
-            <p className="leading-relaxed text-gray-400 font-light">
-              If you have any questions about this Privacy Policy or our security protocols, please reach out via our general <a href="/contact" className="text-purple-400 hover:text-purple-300 transition-colors underline decoration-purple-500/30 underline-offset-4">Contact page</a> or email us directly at <a href="mailto:admin@realitydecoded.in" className="text-purple-400 hover:text-purple-300 transition-colors underline decoration-purple-500/30 underline-offset-4">admin@realitydecoded.in</a>.
-            </p>
-          </section>
+
+<div className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-purple-500/50"></div>
+
+<h3 className={`${spaceGrotesk.className} text-2xl font-bold text-gray-200 mb-4 tracking-wide`}>6. Contact Us</h3>
+
+<p className="leading-relaxed text-gray-400 font-light">
+
+If you have any questions about this Privacy Policy or our security protocols, please reach out via our general <a href="/contact" className="text-purple-400 hover:text-purple-300 transition-colors underline decoration-purple-500/30 underline-offset-4">Contact page</a> or email us directly at <a href="mailto:admin@realitydecoded.in" className="text-purple-400 hover:text-purple-300 transition-colors underline decoration-purple-500/30 underline-offset-4">admin@realitydecoded.in</a>.
+
+</p>
+
+</section>
 
         </div>
         
-        {/* Document Footer */}
         <div className="mt-12 flex justify-end">
            <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">End of Document</span>
         </div>
-
       </div>
     </main>
   );

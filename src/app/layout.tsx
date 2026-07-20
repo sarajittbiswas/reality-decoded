@@ -164,9 +164,11 @@ export default function RootLayout({
                 {[
                   { name: 'About Us', link: '/about' },
                   { name: 'Contact Us', link: '/contact' },
+                  { name: 'Careers', link: '/careers' },
+                  { name: 'Authors', link: '/author' },
                   { name: 'Our Team', link: '/team' },
-                  { name: 'Blog / Field Reports', link: '/blogs' },
-                  { name: 'Brands/Press Connect', link: '/press' }
+                  { name: 'Blog / Field Reports', link: '/blogs' }
+                  
                 ].map((item) => (
                   <li key={item.name}>
                     <a href={item.link} className="text-gray-400 hover:text-white flex items-center gap-2 group transition-colors text-sm">
@@ -185,9 +187,12 @@ export default function RootLayout({
               </h4>
               <ul className="space-y-3">
                 {[
-                  { name: 'Careers', link: '/careers' },
+                  
                   { name: 'Terms of Service', link: '/terms' },
-                  { name: 'Privacy Policy', link: '/privacy' }
+                  { name: 'Privacy Policy', link: '/privacy' },
+                  { name: 'Disclaimer', link: '/disclaimer' },
+                  { name: 'Editorial Policy', link: '/editorial-policy' },
+                  { name: 'Brands/Press Connect', link: '/press' }
                 ].map((item) => (
                   <li key={item.name}>
                     <a href={item.link} className="text-gray-400 hover:text-white flex items-center gap-2 group transition-colors text-sm">

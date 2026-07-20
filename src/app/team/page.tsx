@@ -90,6 +90,12 @@ export default function TeamPage() {
           <p className="text-lg text-gray-400 font-medium max-w-2xl mx-auto">
             We are a decentralized team of journalists, analysts, and producers dedicated to decoding reality and bringing authentic stories to the surface.
           </p>
+          <br></br>
+          {/* CROSS-LINK TO TEAM */}
+<Link href="/author" className="inline-flex items-center gap-2 text-sm text-purple-400 hover:text-purple-300 transition-colors mb-10">
+  <span>View Content Writers Team</span>
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+</Link>
         </div>
       </section>
 

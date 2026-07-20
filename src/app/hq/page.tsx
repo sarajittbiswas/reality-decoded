@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import PurgeButton from '@/components/PurgeButton';
 import LogoutButton from '@/components/LogoutButton';
+import { redirect } from 'next/navigation'; // 🚨 NEW IMPORT FOR THE SUCCESS BANNER
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
@@ -82,6 +83,46 @@ async function deleteCommentAction(formData: FormData) {
   revalidatePath('/hq');
 }
 
+// 🚨 THE UPGRADE: Added the URL redirect at the end to trigger the success banner
+async function updateAgentProfile(formData: FormData) {
+  'use server';
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  const operatorId = cookieStore.get('hq_operator_id')?.value;
+  
+  if (!operatorId) return;
+
+  const { getRequestContext } = await import('@cloudflare/next-on-pages');
+  const db = (getRequestContext().env as any).reality_decoded_db;
+  
+  const avatar = formData.get('avatar') as string;
+  const role = formData.get('role') as string;
+  const location = formData.get('location') as string;
+  const timezone = formData.get('timezone') as string;
+  const bio = formData.get('bio') as string;
+  const website = formData.get('website') as string;
+  const github = formData.get('github') as string;
+  const twitter = formData.get('twitter') as string;
+  const linkedin = formData.get('linkedin') as string;
+  const instagram = formData.get('instagram') as string;
+  const facebook = formData.get('facebook') as string;
+  const reddit = formData.get('reddit') as string;
+
+  await db.prepare(`
+    UPDATE syndicate_agents 
+    SET avatar = ?, role = ?, location = ?, timezone = ?, bio = ?, website = ?, github = ?, twitter = ?, linkedin = ?, instagram = ?, facebook = ?, reddit = ?
+    WHERE id = ?
+  `).bind(
+    avatar, role, location, timezone, bio, website, github, twitter, linkedin, instagram, facebook, reddit, operatorId
+  ).run();
+
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/', 'layout');
+  
+  // FORCE A PAGE RELOAD WITH THE SUCCESS QUERY PARAMETER
+  redirect('/hq?tab=profile&saved=true');
+}
+
 // ==========================================
 // MAIN DASHBOARD COMPONENT
 // ==========================================
@@ -95,14 +136,15 @@ export default async function CommandCenterHQ({
   
   const resolvedParams = await searchParams;
   const activeTab = resolvedParams?.tab || 'overview';
+  const isSaved = resolvedParams?.saved === 'true'; // 🚨 Catch the success signal
   
   // IDENTITY PROTOCOL
   const cookieStore = await cookies();
   const operatorId = cookieStore.get('hq_operator_id')?.value;
-  let agentProfile = null;
+  let agentProfile: any = null;
   
   if (operatorId) {
-    agentProfile = await db.prepare('SELECT name, avatar FROM syndicate_agents WHERE id = ?').bind(operatorId).first();
+    agentProfile = await db.prepare('SELECT * FROM syndicate_agents WHERE id = ?').bind(operatorId).first();
   }
   
   const firstName = agentProfile?.name ? agentProfile.name.split(' ')[0] : (operatorId || 'Agent');
@@ -186,6 +228,11 @@ export default async function CommandCenterHQ({
           Comm-Links {comments.length > 0 && <span className="bg-white text-green-600 px-2 py-0.5 rounded-md text-[10px]">{comments.length}</span>}
         </Link>
 
+        <div className="w-full h-px bg-white/5 my-2 hidden md:block"></div>
+        <Link href="?tab=profile" className={`whitespace-nowrap text-sm md:text-base text-left px-4 py-2 md:p-3 rounded-lg font-bold tracking-widest uppercase transition-all ${activeTab === 'profile' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}>
+          Agent Profile
+        </Link>
+
         <div className="md:mt-auto pt-2 md:pt-6 md:border-t border-white/5 w-full">
           <div className="flex items-center gap-3 bg-black/50 border border-white/5 p-3 rounded-xl mb-4 hidden md:flex">
             {avatarUrl ? (
@@ -210,8 +257,9 @@ export default async function CommandCenterHQ({
             {activeTab === 'content' && 'Content Pipeline'}
             {activeTab === 'intel' && 'Intel Queue'}
             {activeTab === 'comments' && 'Public Comm-Links'}
+            {activeTab === 'profile' && 'Identity Configuration'}
           </h1>
-          {activeTab !== 'overview' && (
+          {activeTab !== 'overview' && activeTab !== 'profile' && (
             <Link href="/hq/write" className="bg-purple-600 hover:bg-purple-500 text-white text-[10px] md:text-xs px-4 py-2 md:py-3 rounded-lg md:rounded-xl transition-all font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)] uppercase tracking-widest whitespace-nowrap">
               + New Deploy
             </Link>
@@ -493,6 +541,141 @@ export default async function CommandCenterHQ({
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        )}
+
+        {/* --- TAB 5: AGENT IDENTITY CONFIGURATION --- */}
+        {activeTab === 'profile' && (
+          <div className="max-w-4xl mx-auto animate-in fade-in duration-500">
+            
+            {/* 🚨 THE UPGRADE: The Success Banner Appears Here! */}
+            {isSaved && (
+              <div className="bg-green-500/10 border border-green-500/30 text-green-400 p-4 rounded-2xl mb-8 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 shadow-[0_0_20px_rgba(34,197,94,0.1)]">
+                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                <span className="text-sm font-bold uppercase tracking-widest">Identity Synchronized Successfully. Live nodes updated.</span>
+              </div>
+            )}
+
+            <div className="bg-[#161925] border border-white/5 rounded-2xl shadow-2xl relative overflow-hidden">
+              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-purple-500 shadow-[0_0_15px_purple]"></div>
+              
+              <div className="p-6 md:p-10 border-b border-white/5">
+                <h2 className={`${spaceGrotesk.className} text-2xl font-bold text-white uppercase tracking-widest mb-2 flex items-center gap-3`}>
+                  <svg className="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+                  Identity Configuration
+                </h2>
+                <p className="text-gray-400 text-xs font-mono uppercase tracking-widest">Update your public field operative dossier. This data synchronizes globally.</p>
+              </div>
+
+              <form action={updateAgentProfile} className="p-6 md:p-10 space-y-10">
+                
+                {/* Core Identity */}
+                <div>
+                  <h3 className="text-sm font-bold text-purple-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span> Core Protocols
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">Avatar Image URL</label>
+                      <input type="text" name="avatar" defaultValue={agentProfile?.avatar || ''} placeholder="https://..." className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono focus:border-purple-500 focus:outline-none transition-colors" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">Public Role</label>
+                      <input type="text" name="role" defaultValue={agentProfile?.role || ''} placeholder="e.g. Investigative Journalist" className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono focus:border-purple-500 focus:outline-none transition-colors" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">Location</label>
+                      <input type="text" name="location" defaultValue={agentProfile?.location || ''} placeholder="e.g. Bengaluru, India" className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono focus:border-purple-500 focus:outline-none transition-colors" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">Timezone (IANA Format)</label>
+                      <select name="timezone" defaultValue={agentProfile?.timezone || 'Asia/Kolkata'} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono focus:border-purple-500 focus:outline-none transition-colors appearance-none">
+                        <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                        <option value="America/New_York">America/New_York (EST/EDT)</option>
+                        <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                        <option value="Europe/London">Europe/London (GMT/BST)</option>
+                        <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                        <option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
+                        <option value="UTC">UTC</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bio */}
+                <div>
+                  <h3 className="text-sm font-bold text-purple-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span> Operative Bio
+                  </h3>
+                  <textarea name="bio" defaultValue={agentProfile?.bio || ''} rows={4} placeholder="Decoded Intel Analyst and field researcher..." className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono focus:border-purple-500 focus:outline-none transition-colors resize-none"></textarea>
+                </div>
+
+                {/* Social Grid */}
+                <div>
+                  <h3 className="text-sm font-bold text-purple-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span> Social Coordinates (Usernames only)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">Personal Website</label>
+                      <div className="flex bg-black/50 border border-white/10 rounded-xl overflow-hidden focus-within:border-purple-500 transition-colors">
+                        <span className="px-4 py-3 text-sm text-gray-500 font-mono bg-black border-r border-white/10">https://</span>
+                        <input type="text" name="website" defaultValue={agentProfile?.website || ''} placeholder="domain.com" className="w-full bg-transparent px-4 py-3 text-sm text-white font-mono outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">X / Twitter</label>
+                      <div className="flex bg-black/50 border border-white/10 rounded-xl overflow-hidden focus-within:border-purple-500 transition-colors">
+                        <span className="px-4 py-3 text-sm text-gray-500 font-mono bg-black border-r border-white/10">@</span>
+                        <input type="text" name="twitter" defaultValue={agentProfile?.twitter || ''} placeholder="username" className="w-full bg-transparent px-4 py-3 text-sm text-white font-mono outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">GitHub</label>
+                      <div className="flex bg-black/50 border border-white/10 rounded-xl overflow-hidden focus-within:border-purple-500 transition-colors">
+                        <span className="px-4 py-3 text-sm text-gray-500 font-mono bg-black border-r border-white/10">/</span>
+                        <input type="text" name="github" defaultValue={agentProfile?.github || ''} placeholder="username" className="w-full bg-transparent px-4 py-3 text-sm text-white font-mono outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">LinkedIn</label>
+                      <div className="flex bg-black/50 border border-white/10 rounded-xl overflow-hidden focus-within:border-purple-500 transition-colors">
+                        <span className="px-4 py-3 text-sm text-gray-500 font-mono bg-black border-r border-white/10">/in/</span>
+                        <input type="text" name="linkedin" defaultValue={agentProfile?.linkedin || ''} placeholder="username" className="w-full bg-transparent px-4 py-3 text-sm text-white font-mono outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">Instagram</label>
+                      <div className="flex bg-black/50 border border-white/10 rounded-xl overflow-hidden focus-within:border-purple-500 transition-colors">
+                        <span className="px-4 py-3 text-sm text-gray-500 font-mono bg-black border-r border-white/10">@</span>
+                        <input type="text" name="instagram" defaultValue={agentProfile?.instagram || ''} placeholder="username" className="w-full bg-transparent px-4 py-3 text-sm text-white font-mono outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">Facebook</label>
+                      <div className="flex bg-black/50 border border-white/10 rounded-xl overflow-hidden focus-within:border-purple-500 transition-colors">
+                        <span className="px-4 py-3 text-sm text-gray-500 font-mono bg-black border-r border-white/10">/</span>
+                        <input type="text" name="facebook" defaultValue={agentProfile?.facebook || ''} placeholder="username" className="w-full bg-transparent px-4 py-3 text-sm text-white font-mono outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">Reddit</label>
+                      <div className="flex bg-black/50 border border-white/10 rounded-xl overflow-hidden focus-within:border-purple-500 transition-colors">
+                        <span className="px-4 py-3 text-sm text-gray-500 font-mono bg-black border-r border-white/10">/user/</span>
+                        <input type="text" name="reddit" defaultValue={agentProfile?.reddit || ''} placeholder="username" className="w-full bg-transparent px-4 py-3 text-sm text-white font-mono outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/5 pt-8 flex justify-end">
+                  <button type="submit" className="bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase tracking-widest text-xs px-8 py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:shadow-[0_0_30px_rgba(168,85,247,0.5)]">
+                    Save & Synchronize Identity
+                  </button>
+                </div>
+                
+              </form>
             </div>
           </div>
         )}

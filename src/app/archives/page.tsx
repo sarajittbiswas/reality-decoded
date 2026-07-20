@@ -28,10 +28,18 @@ export default async function ArchivesPage() {
   // 1. Fetch Videos
   const { results: videos } = await db.prepare('SELECT * FROM videos ORDER BY created_at DESC').all();
 
-  // 2. Fetch Published & Scheduled Articles
-  const { results: allArticles } = await db.prepare(
-    "SELECT * FROM articles WHERE status IN ('published', 'scheduled') ORDER BY created_at DESC"
-  ).all();
+  // 2. 🚨 UPGRADE: Fetch ALL agent profile columns to pass into the Board component
+  const { results: allArticles } = await db.prepare(`
+    SELECT articles.*, 
+           sa.id as agent_id, sa.name as agent_name, sa.avatar as agent_avatar, 
+           sa.role as agent_role, sa.location as agent_location, sa.timezone as agent_timezone, 
+           sa.website as agent_website, sa.github as agent_github, sa.twitter as agent_twitter, 
+           sa.linkedin as agent_linkedin, sa.instagram as agent_instagram, sa.facebook as agent_facebook, sa.reddit as agent_reddit
+    FROM articles 
+    LEFT JOIN syndicate_agents sa ON articles.agent_id = sa.id
+    WHERE status IN ('published', 'scheduled') 
+    ORDER BY created_at DESC
+  `).all();
 
   // 🚨 Filter using JavaScript IST Time
   const now = new Date();
@@ -40,13 +48,20 @@ export default async function ArchivesPage() {
     (a.status === 'scheduled' && getISTDate(a.scheduled_for) <= now)
   );
 
-  // 3. Transform Articles to match the ArchiveBoard data structure
+  // 3. Transform Articles to match the ArchiveBoard data structure WITH agent objects
   const liveBlogs = articles.map((article: any) => ({
-    id: article.slug, // Using slug as ID so the Link works correctly
+    id: article.slug, 
     title: article.title,
     description: stripHtml(article.excerpt || "Classified intel transmission. Access the full report."),
     category: article.category || 'INTEL',
-    image: getFirstImage(article.content) || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop' // Fallback image
+    image: getFirstImage(article.content) || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop',
+    author: article.author,
+    agent: article.agent_id ? {
+      id: article.agent_id, name: article.agent_name, avatar: article.agent_avatar, 
+      role: article.agent_role, location: article.agent_location, timezone: article.agent_timezone, 
+      github: article.agent_github, twitter: article.agent_twitter, linkedin: article.agent_linkedin, 
+      instagram: article.agent_instagram, facebook: article.agent_facebook, reddit: article.agent_reddit
+    } : null
   }));
 
   return (
