@@ -7,10 +7,15 @@ export async function GET() {
   const db = (getRequestContext().env as any).reality_decoded_db;
   const siteUrl = 'https://realitydecoded.in';
 
-  // 1. Fetch data
-  const { results: articles } = await db.prepare(
-    "SELECT title, slug, excerpt, created_at, author FROM articles WHERE status = 'published' ORDER BY created_at DESC LIMIT 20"
-  ).all();
+  // 1. Fetch the 20 most recent LIVE articles
+const { results: articles } = await db.prepare(`
+  SELECT title, slug, excerpt, created_at, author 
+  FROM articles 
+  WHERE (status = 'published') 
+  OR (status = 'scheduled' AND created_at <= datetime('now')) 
+  ORDER BY created_at DESC 
+  LIMIT 20
+`).all();
 
   const { results: videos } = await db.prepare(
     "SELECT id, title, description, created_at FROM videos ORDER BY created_at DESC LIMIT 20"
