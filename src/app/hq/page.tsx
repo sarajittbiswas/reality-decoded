@@ -10,7 +10,9 @@ const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export const runtime = 'edge'; 
 
-// --- SERVER ACTIONS ---
+// ==========================================
+// SERVER ACTIONS
+// ==========================================
 
 async function approveIntelToEditor(formData: FormData) {
   'use server';
@@ -19,6 +21,7 @@ async function approveIntelToEditor(formData: FormData) {
   const db = (getRequestContext().env as any).reality_decoded_db;
   
   const intel = await db.prepare("SELECT * FROM intel_submissions WHERE id = ?").bind(id).first();
+  
   if (intel) {
     const newId = crypto.randomUUID();
     const finalTitle = intel.subject || `Intel from ${intel.name || 'Anonymous'}`;
@@ -50,7 +53,6 @@ async function scheduleArticle(formData: FormData) {
   const id = formData.get('id') as string;
   const rawDate = formData.get('scheduled_for') as string;
   
-  // FIX: Convert HTML datetime-local (2026-07-20T14:30) to SQLite standard (2026-07-20 14:30:00)
   const formattedDate = rawDate.replace('T', ' ') + ':00';
   
   const { getRequestContext } = await import('@cloudflare/next-on-pages');
@@ -80,9 +82,10 @@ async function deleteCommentAction(formData: FormData) {
   revalidatePath('/hq');
 }
 
-// --- MAIN DASHBOARD COMPONENT ---
+// ==========================================
+// MAIN DASHBOARD COMPONENT
+// ==========================================
 
-// UPGRADE: Next.js 15 requires searchParams to be a Promise!
 export default async function CommandCenterHQ({
   searchParams,
 }: {
@@ -90,7 +93,6 @@ export default async function CommandCenterHQ({
 }) {
   const db = (getRequestContext().env as any).reality_decoded_db;
   
-  // Await the promise to resolve the Next.js 15 terminal error
   const resolvedParams = await searchParams;
   const activeTab = resolvedParams?.tab || 'overview';
   
@@ -98,9 +100,11 @@ export default async function CommandCenterHQ({
   const cookieStore = await cookies();
   const operatorId = cookieStore.get('hq_operator_id')?.value;
   let agentProfile = null;
+  
   if (operatorId) {
     agentProfile = await db.prepare('SELECT name, avatar FROM syndicate_agents WHERE id = ?').bind(operatorId).first();
   }
+  
   const firstName = agentProfile?.name ? agentProfile.name.split(' ')[0] : (operatorId || 'Agent');
   const avatarUrl = agentProfile?.avatar || null;
 
@@ -111,20 +115,23 @@ export default async function CommandCenterHQ({
   const { results: comments } = await db.prepare("SELECT * FROM comments ORDER BY created_at DESC").all();
   const { results: subscribers } = await db.prepare("SELECT * FROM subscribers").all();
 
-  // UPGRADE: Dynamic Time-Based Logic
-  // If a scheduled article's time has passed, treat it as LIVE automatically!
+  // TIMEZONE FIX: Force Cloudflare to read the date string as IST (+05:30)
+  const getISTDate = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    return new Date(dateStr.replace(' ', 'T') + '+05:30');
+  };
+
   const now = new Date();
   
   const drafts = allArticles.filter((a: any) => a.status === 'draft' || a.status === 'pending');
   const liveArticles = allArticles.filter((a: any) => 
     a.status === 'published' || 
-    (a.status === 'scheduled' && new Date(a.scheduled_for) <= now)
+    (a.status === 'scheduled' && getISTDate(a.scheduled_for) <= now)
   );
   const scheduled = allArticles.filter((a: any) => 
-    a.status === 'scheduled' && new Date(a.scheduled_for) > now
+    a.status === 'scheduled' && getISTDate(a.scheduled_for) > now
   );
 
-  // FIX: Robust Metrics Matching Engine
   const getArticleStats = (slug: string) => {
     const stat = metrics.find((m: any) => 
       m.content_id === slug || 
@@ -157,10 +164,8 @@ export default async function CommandCenterHQ({
   const maxViews = chartedArticles.length > 0 ? Math.max(...chartedArticles.map(a => a.stats.views)) || 1 : 1;
 
   return (
-    // UPGRADE: HR Dash Style Flex Layout (Sidebar on Desktop, Top Bar on Mobile)
     <div className="min-h-screen bg-[#0f111a] text-gray-200 flex flex-col md:flex-row pt-20 relative w-full overflow-hidden font-mono"> 
       
-      {/* Dynamic Grid Background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
       {/* --- RESPONSIVE SIDEBAR --- */}
@@ -197,7 +202,6 @@ export default async function CommandCenterHQ({
         </div>
       </div>
 
-      {/* --- MAIN CONTENT AREA --- */}
       <div className="flex-1 p-4 md:p-10 h-[calc(100vh-140px)] md:h-[calc(100vh-80px)] overflow-y-auto w-full relative z-10">
         
         <div className="flex justify-between items-center mb-8">
@@ -214,10 +218,9 @@ export default async function CommandCenterHQ({
           )}
         </div>
 
-        {/* --- TAB 1: OVERVIEW & ANALYTICS (HR DASH STYLE) --- */}
+        {/* --- TAB 1: OVERVIEW & ANALYTICS --- */}
         {activeTab === 'overview' && (
           <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
-            {/* Top Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="bg-[#161925] border border-white/5 p-6 rounded-2xl flex flex-col justify-between shadow-2xl relative overflow-hidden group hover:border-purple-500/50 transition-all">
                 <span className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4 relative z-10 group-hover:text-purple-300 transition-colors">Total Network Views</span>
@@ -234,7 +237,6 @@ export default async function CommandCenterHQ({
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Visual Graph: Traffic Velocity */}
               <div className="col-span-1 lg:col-span-2 bg-[#161925] border border-white/5 rounded-2xl overflow-hidden shadow-2xl p-6 md:p-8">
                 <h3 className="text-lg font-bold text-white mb-8 flex items-center gap-3">
                   <span className="w-1.5 h-6 bg-purple-500 rounded-full"></span>
@@ -260,7 +262,6 @@ export default async function CommandCenterHQ({
                 </div>
               </div>
 
-              {/* Data Table */}
               <div className="col-span-1 bg-[#161925] border border-white/5 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
                 <div className="p-6 border-b border-white/5">
                   <h3 className="text-lg font-bold text-white flex items-center gap-3">
@@ -295,11 +296,10 @@ export default async function CommandCenterHQ({
           </div>
         )}
 
-        {/* --- TAB 2: CONTENT HUB (CMS & SCHEDULING) --- */}
+        {/* --- TAB 2: CONTENT HUB --- */}
         {activeTab === 'content' && (
           <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in duration-500">
             
-            {/* SERVER DRAFTS & SCHEDULING */}
             <section>
               <h2 className="text-lg font-bold mb-6 flex items-center gap-3 text-white uppercase tracking-widest border-b border-white/10 pb-4">
                 Server Drafts <span className="bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-full">{drafts.length}</span>
@@ -335,7 +335,6 @@ export default async function CommandCenterHQ({
               </div>
             </section>
 
-            {/* SCHEDULED DEPLOYMENTS */}
             {scheduled.length > 0 && (
               <section>
                 <h2 className="text-lg font-bold mb-6 flex items-center gap-3 text-white uppercase tracking-widest border-b border-white/10 pb-4">
@@ -349,7 +348,7 @@ export default async function CommandCenterHQ({
                         <h3 className="text-sm font-bold text-gray-200">{article.title}</h3>
                         <p className="text-[10px] text-yellow-500 uppercase tracking-widest mt-2 font-bold flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
-                          Deploying: {new Date(article.scheduled_for).toLocaleString()}
+                          Deploying: {getISTDate(article.scheduled_for).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })}
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
@@ -366,7 +365,6 @@ export default async function CommandCenterHQ({
               </section>
             )}
 
-            {/* LIVE ARCHIVES */}
             <section>
               <h2 className="text-lg font-bold mb-6 flex items-center gap-3 text-white uppercase tracking-widest border-b border-white/10 pb-4">
                 Live Archives <span className="bg-gray-600 text-white text-[10px] px-2 py-0.5 rounded-full">{liveArticles.length}</span>

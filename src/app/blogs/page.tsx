@@ -6,42 +6,54 @@ const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export const runtime = 'edge';
 
-// Helper function to extract the first image from the TipTap HTML
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+
 const getFirstImage = (html: string) => {
   const match = html.match(/<img[^>]+src="([^">]+)"/);
   return match ? match[1] : null;
 };
 
-// Helper function to strip HTML tags for a clean preview text
 const stripHtml = (html: string) => {
   return html.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
 };
 
+// ==========================================
+// MAIN FEED COMPONENT
+// ==========================================
+
 export default async function PublicBlogFeed() {
   const db = (getRequestContext().env as any).reality_decoded_db;
   
-  // 🚨 UPGRADE: Fetch both published and scheduled, then filter in JS to bypass SQLite timezone gaps
   const { results: allArticles } = await db.prepare(`
     SELECT * FROM articles 
     WHERE status IN ('published', 'scheduled') 
     ORDER BY created_at DESC
   `).all();
 
+  // TIMEZONE FIX: Force Cloudflare to read the date string as IST (+05:30)
+  const getISTDate = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    return new Date(dateStr.replace(' ', 'T') + '+05:30');
+  };
+
   const now = new Date();
   
-  // Filter using JavaScript local time
   const articles = allArticles.filter((a: any) => 
     a.status === 'published' || 
-    (a.status === 'scheduled' && new Date(a.scheduled_for) <= now)
+    (a.status === 'scheduled' && getISTDate(a.scheduled_for) <= now)
   );
 
   return (
     <main className="min-h-screen bg-[#050505] text-white pt-32 pb-20 px-6 font-mono relative overflow-hidden">
-      {/* Ambient Glow Background */}
+      
+      {/* Background Decorators */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-purple-900/20 blur-[120px] rounded-full pointer-events-none"></div>
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
       
       <div className="max-w-6xl mx-auto relative z-10">
+        
         <header className="mb-16 text-center border-b border-white/10 pb-12">
           <h1 className={`${spaceGrotesk.className} text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]`}>
             Decoded Intel
@@ -65,7 +77,6 @@ export default async function PublicBlogFeed() {
                 <Link href={`/blogs/${article.slug}`} key={article.id} className="group block h-full">
                   <article className="bg-[#0a0a0a]/80 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-purple-500/50 hover:bg-[#111] transition-all duration-500 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:-translate-y-1 flex flex-col h-full">
                     
-                    {/* Thumbnail Section */}
                     <div className="w-full h-48 relative overflow-hidden bg-black/50 border-b border-white/5">
                       {thumbnailUrl ? (
                         <img 
@@ -74,16 +85,13 @@ export default async function PublicBlogFeed() {
                           className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
                         />
                       ) : (
-                        // Fallback if no image exists
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-900/20 to-black">
                           <span className="text-purple-500/30 font-bold tracking-widest uppercase text-xs">No Image Data</span>
                         </div>
                       )}
-                      {/* Overlay gradient */}
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent pointer-events-none"></div>
                     </div>
                     
-                    {/* Content Section */}
                     <div className="p-6 flex flex-col flex-grow">
                       <div className="flex justify-between items-center mb-4">
                         <span className="text-[10px] uppercase tracking-widest text-purple-400 border border-purple-500/30 bg-purple-500/10 px-2 py-1 rounded shadow-[0_0_10px_rgba(168,85,247,0.2)]">

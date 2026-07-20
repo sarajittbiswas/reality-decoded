@@ -10,14 +10,16 @@ import Link from 'next/link';
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 export const runtime = 'edge';
 
-// Helper: Extract the first image from the HTML content body
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+
 const getFirstImage = (html: string) => {
   if (!html) return null;
   const match = html.match(/<img[^>]+src="([^">]+)"/);
   return match ? match[1] : null;
 };
 
-// Helper: Calculate reading time
 const calculateReadingTime = (text: string) => {
   if (!text) return "1 MIN READ";
   const words = text.replace(/<[^>]*>?/gm, '').split(/\s+/).length;
@@ -25,13 +27,15 @@ const calculateReadingTime = (text: string) => {
   return `${minutes} MIN READ`;
 };
 
-// 🚨 AUTOMATED DYNAMIC SEO METADATA GENERATOR
+// ==========================================
+// SEO & METADATA GENERATOR
+// ==========================================
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   try {
     const resolvedParams = await params;
     const db = (getRequestContext().env as any).reality_decoded_db;
     
-    // Fetches title, category, and raw content containing your images
     const article = await db.prepare("SELECT title, category, content FROM articles WHERE slug = ?").bind(resolvedParams.slug).first();
     
     if (!article) return { title: 'Not Found | Reality Decoded' };
@@ -39,11 +43,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const baseUrl = 'https://realitydecoded.in';
     const cleanDescription = (article.content as string).replace(/<[^>]*>?/gm, '').substring(0, 160) + '...';
 
-    // ⚡ AUTO-EXTRACT IMAGE FROM CONTENT BODY
     const extractedImg = getFirstImage(article.content as string);
     
-    // Resolve absolute paths: If it's a raw link (e.g. Unsplash), use it directly. Otherwise, patch it with your domain.
     let imageUrl = extractedImg || `${baseUrl}/default-cover.png`;
+    
     if (extractedImg && !extractedImg.startsWith('http')) {
       imageUrl = `${baseUrl}${extractedImg.startsWith('/') ? '' : '/'}${extractedImg}`;
     }
@@ -78,14 +81,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
+// ==========================================
+// MAIN DETAIL COMPONENT
+// ==========================================
+
 export default async function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
 
   const db = (getRequestContext().env as any).reality_decoded_db;
   
-  // 1. Fetch the main article with agent credentials
-  // 🚨 UPGRADE: Fetch if published OR scheduled, then verify time in JS to bypass UTC gap
   const article = await db.prepare(`
     SELECT articles.*, syndicate_agents.name as agent_name, syndicate_agents.avatar as agent_avatar
     FROM articles 
@@ -95,31 +100,32 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
 
   if (!article) notFound();
 
-  // The ultimate Timezone un-blocker
+  // TIMEZONE FIX: Force Cloudflare to read the date string as IST (+05:30)
+  const getISTDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return new Date();
+    return new Date(dateStr.replace(' ', 'T') + '+05:30');
+  };
+
   const now = new Date();
-  const isLive = article.status === 'published' || (article.status === 'scheduled' && new Date(article.scheduled_for as string) <= now);
+  const isLive = article.status === 'published' || (article.status === 'scheduled' && getISTDate(article.scheduled_for as string) <= now);
   
   if (!isLive) notFound();
 
-  // Determine if it's a clean team post or a user submission
   const isTeamArticle = article.author === 'Syndicate Admin';
 
-  // 2. Fetch 3 related articles (excluding current article)
   const { results: allRelated } = await db.prepare(`
     SELECT * FROM articles 
     WHERE slug != ? AND status IN ('published', 'scheduled') 
     ORDER BY created_at DESC
   `).bind(slug).all();
 
-  // Filter related articles using the same JS timezone logic
   const relatedArticles = allRelated.filter((a: any) => 
-    a.status === 'published' || (a.status === 'scheduled' && new Date(a.scheduled_for) <= now)
+    a.status === 'published' || (a.status === 'scheduled' && getISTDate(a.scheduled_for) <= now)
   ).slice(0, 3);
 
   const heroImage = getFirstImage(article.content) || 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000&auto=format&fit=crop';
   const readTime = calculateReadingTime(article.content);
   
-  // Dynamic tags split safely
   const tags = article.tags && article.tags.trim() !== "" 
     ? article.tags.split(',').map((t: string) => t.trim()).filter(Boolean) 
     : [article.category || 'INTEL'];
@@ -127,13 +133,28 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   return (
     <main className="min-h-screen bg-[#0a0a0a] pt-32 pb-24 relative font-mono">
       
-      {/* 🚨 THE VIEW TRACKER: Silently pings your DB on load! */}
       <ViewTracker slug={slug} />
 
       <ScrollProgress />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[50%] h-[30%] bg-purple-900/10 blur-[120px] pointer-events-none z-0"></div>
 
       <article className="max-w-4xl mx-auto px-6 relative z-10">
+        
+        {/* --- SYSTEM BREADCRUMBS --- */}
+        <nav className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-[10px] uppercase tracking-widest font-mono text-gray-500 mb-10 border-b border-white/5 pb-4">
+          <Link href="/" className="hover:text-purple-400 transition-colors">Mainframe</Link>
+          <span className="text-white/20">/</span>
+          <Link href="/blogs" className="hover:text-purple-400 transition-colors">Archives</Link>
+          <span className="text-white/20">/</span>
+          <Link href={`/archives/${article.category?.toLowerCase() || 'intel'}`} className="hover:text-purple-400 transition-colors">
+            {article.category || 'INTEL'}
+          </Link>
+          <span className="text-white/20">/</span>
+          <span className="text-purple-400 truncate max-w-[200px] md:max-w-xs" title={article.title as string}>
+            FILE: RD-{slug.substring(0,6).toUpperCase()}
+          </span>
+        </nav>
+
         <div className="mb-10 text-center max-w-3xl mx-auto">
           <div className="flex items-center justify-center gap-4 mb-6">
             <span className="inline-block bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-bold px-3 py-1 rounded uppercase tracking-widest shadow-[0_0_10px_rgba(168,85,247,0.2)]">
@@ -182,7 +203,6 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
 
         <div className="max-w-3xl mx-auto bg-[#111111]/50 backdrop-blur-sm border border-white/5 p-8 md:p-12 rounded-2xl shadow-xl">
           
-          {/* THE EDITOR CONTENT IS INJECTED HERE! */}
           <div 
             className="syndicate-prose mb-12"
             dangerouslySetInnerHTML={{ __html: article.content as string }} 
@@ -213,7 +233,6 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           <span className="text-[10px] text-gray-600 uppercase tracking-widest">End of Transmission</span>
         </div>
 
-        {/* RELATED INTELLIGENCE SECTION */}
         {relatedArticles.length > 0 && (
           <div className="border-t border-white/5 pt-12 relative z-10 max-w-4xl mx-auto">
             <h3 className={`${spaceGrotesk.className} text-2xl font-bold text-white uppercase mb-8 flex items-center gap-3`}>
@@ -243,31 +262,47 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
         )}
       </article>
 
-      {/* TIPTAP CSS STYLES (100% PRESERVED) */}
       <style dangerouslySetInnerHTML={{ __html: `
         .syndicate-prose {
           color: #e5e7eb;
           font-size: 1.125rem;
           line-height: 1.75;
         }
-        .syndicate-prose h1, .syndicate-prose h2, .syndicate-prose h3 {
+        
+        .syndicate-prose h1, 
+        .syndicate-prose h2, 
+        .syndicate-prose h3 {
           color: #ffffff;
           font-weight: 700;
           line-height: 1.3;
           margin-top: 1.5em;
           margin-bottom: 0.5em;
         }
-        .syndicate-prose h1 { font-size: 2.25rem; }
-        .syndicate-prose h2 { font-size: 1.875rem; }
-        .syndicate-prose h3 { font-size: 1.5rem; }
-        .syndicate-prose p { margin-bottom: 1.5em; }
         
-        .syndicate-prose strong, .syndicate-prose b { 
+        .syndicate-prose h1 { 
+          font-size: 2.25rem; 
+        }
+        
+        .syndicate-prose h2 { 
+          font-size: 1.875rem; 
+        }
+        
+        .syndicate-prose h3 { 
+          font-size: 1.5rem; 
+        }
+        
+        .syndicate-prose p { 
+          margin-bottom: 1.5em; 
+        }
+        
+        .syndicate-prose strong, 
+        .syndicate-prose b { 
           font-weight: bold !important; 
           color: #ffffff !important; 
         }
         
-        .syndicate-prose em, .syndicate-prose i { 
+        .syndicate-prose em, 
+        .syndicate-prose i { 
           font-style: italic !important; 
         }
         
@@ -283,19 +318,19 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           margin-bottom: 1.5em; 
         }
         
-        .syndicate-prose blockquote {
-          border-left: 4px solid #a855f7;
-          padding: 0.5rem 0 0.5rem 1.25rem;
-          margin: 1.5em 0;
-          font-style: italic;
-          background: rgba(168,85,247,0.05);
-          border-radius: 0 0.5rem 0.5rem 0;
+        .syndicate-prose blockquote { 
+          border-left: 4px solid #a855f7; 
+          padding: 0.5rem 0 0.5rem 1.25rem; 
+          margin: 1.5em 0; 
+          font-style: italic; 
+          background: rgba(168,85,247,0.05); 
+          border-radius: 0 0.5rem 0.5rem 0; 
         }
         
         .syndicate-prose a { 
           color: #c084fc; 
           text-decoration: underline; 
-          text-underline-offset: 4px;
+          text-underline-offset: 4px; 
         }
         
         .syndicate-prose img { 
