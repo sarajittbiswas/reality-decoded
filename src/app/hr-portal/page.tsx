@@ -4,6 +4,7 @@ import { Space_Grotesk } from 'next/font/google';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
+
 export default function HRDashboard() {
   const [authStage, setAuthStage] = useState<'login' | 'otp' | 'authenticated'>('login');
   const [email, setEmail] = useState('');
@@ -11,9 +12,11 @@ export default function HRDashboard() {
   const [otp, setOtp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [maskedEmail, setMaskedEmail] = useState('');
+
   
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [data, setData] = useState({ jobs: [], applications: [], analytics: [] });
+  const [data, setData] = useState({ jobs: [], applications: [], analytics: [], agents: [] });
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' }>({ show: false, msg: '', type: 'success' });
   
   const [modal, setModal] = useState({ show: false, title: '', desc: '', action: () => {} });
@@ -23,6 +26,10 @@ export default function HRDashboard() {
   const [expandedApp, setExpandedApp] = useState<string | null>(null);
   const [editingJob, setEditingJob] = useState<any>(null);
   const [jobTab, setJobTab] = useState<'Active' | 'Expired' | 'Hidden' | 'Deleted'>('Active');
+  
+  // Agent Management States
+  const [editingAgent, setEditingAgent] = useState<any>(null);
+  const [isDeployingAgent, setIsDeployingAgent] = useState(false);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -38,6 +45,7 @@ export default function HRDashboard() {
     window.history.pushState(null, '', `#${tab}`);
     setActiveTab(tab);
     if (tab !== 'editJob') setEditingJob(null);
+    if (tab !== 'editAgent') setEditingAgent(null);
   };
 
   useEffect(() => {
@@ -79,11 +87,27 @@ export default function HRDashboard() {
   const handleOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch('/api/hr/auth', { method: 'POST', body: JSON.stringify({ action: 'verify', email, otp }) });
+    const json = await res.json();
     if (res.ok) {
-      setAuthStage('authenticated');
-      fetchData();
-      showToast('Authentication Successful');
+      if (json.requireOtp) {
+         setMaskedEmail(json.maskedEmail); // Capture the masked email
+         setAuthStage('otp');
+      } else {
+         setAuthStage('authenticated');
+         fetchData();
+         showToast('Authentication Successful');
+      }
     } else showToast('Invalid OTP', 'error');
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/hr/auth', { method: 'POST', body: JSON.stringify({ action: 'logout' }) });
+    setAuthStage('login');
+    setEmail('');
+    setPassword('');
+    setOtp('');
+    window.location.hash = ''; 
+    showToast('Secure Session Terminated');
   };
 
   // --- JOB MANAGEMENT ---
@@ -111,19 +135,6 @@ export default function HRDashboard() {
     setJobTab('Active');
     changeTab('manageJobs');
     fetchData();
-  };
-
-  const handleLogout = async () => {
-    await fetch('/api/hr/auth', { 
-      method: 'POST', 
-      body: JSON.stringify({ action: 'logout' }) 
-    });
-    setAuthStage('login');
-    setEmail('');
-    setPassword('');
-    setOtp('');
-    window.location.hash = ''; 
-    showToast('Secure Session Terminated');
   };
 
   const handleEditJob = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -171,6 +182,62 @@ export default function HRDashboard() {
     fetchData();
   };
 
+  // --- AGENT NETWORK MANAGEMENT ---
+  const handleAddAgent = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsDeployingAgent(true);
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    await fetch('/api/hr/manage', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'add_agent',
+        username: formData.get('username'),
+        name: formData.get('name'),
+        email: formData.get('email'),
+        role: formData.get('role'),
+        password: formData.get('password'),
+        pin: formData.get('pin')
+      })
+    });
+    
+    setIsDeployingAgent(false);
+    showToast('Agent Provisioned & Secured Email Dispatched');
+    form.reset();
+    changeTab('authorNetwork');
+    fetchData();
+  };
+
+  const handleEditAgent = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    await fetch('/api/hr/manage', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        action: 'edit_agent',
+        username: editingAgent.id,
+        name: formData.get('name'),
+        email: formData.get('email'),
+        role: formData.get('role'),
+        password: formData.get('password'),
+        pin: formData.get('pin')
+      })
+    });
+    showToast('Agent Profile & Credentials Updated');
+    setEditingAgent(null);
+    changeTab('authorNetwork');
+    fetchData();
+  };
+
+  const handleDeleteAgent = async (agentId: string) => {
+    confirmAction('Revoke Access', `Are you sure you want to permanently delete agent ${agentId}? This destroys all their login tokens.`, async () => {
+      await fetch(`/api/hr/manage?id=${agentId}&type=agent`, { method: 'DELETE' });
+      showToast('Agent Access Terminated');
+      fetchData();
+    });
+  };
+
   // --- APPLICATIONS ---
   const updateStatus = async (trackingId: string, newStatus: string) => {
     await fetch('/api/hr/manage', { method: 'PATCH', body: JSON.stringify({ action: 'update_status', trackingId, newStatus }) });
@@ -213,6 +280,8 @@ export default function HRDashboard() {
             </>
           ) : (
             <>
+
+              <p className="text-gray-400 text-xs text-center -mt-2 mb-2">Verification code sent to <span className="text-white font-bold">{maskedEmail}</span></p>
               <input type="text" value={otp} onChange={e => setOtp(e.target.value)} placeholder="Enter 6-Digit Code" required className="w-full bg-black border border-white/20 p-3 rounded-lg text-white text-center tracking-widest text-xl focus:border-purple-500 outline-none" />
               <button type="submit" className="w-full bg-purple-600 text-white p-3 rounded-lg font-bold hover:bg-purple-500 transition-colors">Verify & Login</button>
             </>
@@ -227,22 +296,17 @@ export default function HRDashboard() {
   const applyViews = data.analytics?.filter((a: any) => a.page_type === 'job_apply').reduce((acc: number, curr: any) => acc + curr.views, 0) || 0;
   const totalViews = (careerViews + applyViews) || 1; 
   const careerPct = Math.round((careerViews / totalViews) * 100);
-
   const activeJobs = data.jobs?.filter((j: any) => j.is_deleted === 0 && new Date(j.expires_at) > new Date() && (j.is_active === 1 || j.is_active === null)) || [];
 
   let filteredApps = data.applications || [];
   if (appFilter === 'Latest') filteredApps = (data.applications || []).slice(0, 10);
   else if (appFilter !== 'All') filteredApps = (data.applications || []).filter((a: any) => a.status === appFilter.toLowerCase().replace(' ', '_'));
-  
   if (appJobFilter !== 'All Jobs') filteredApps = filteredApps.filter((a: any) => a.job_title === appJobFilter);
-
   const uniqueJobsList = (data.jobs || []).filter((j: any) => j.is_deleted === 0).map((j: any) => j.role);
 
   return (
-    // FIX: Main layout is now flex-col on mobile, flex-row on desktop
     <div className="min-h-screen bg-[#0f111a] text-gray-200 flex flex-col md:flex-row pt-20 relative overflow-hidden"> 
       
-      {/* CUSTOM CONFIRMATION MODAL */}
       {modal.show && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#161925] border border-white/10 p-6 md:p-8 rounded-2xl max-w-md w-full shadow-2xl transform scale-100 animate-in fade-in zoom-in duration-200">
@@ -262,19 +326,26 @@ export default function HRDashboard() {
         </div>
       )}
 
-      {/* FIX: Sidebar adapts to a top scrolling nav bar on mobile */}
+      {/* SIDEBAR */}
       <div className="w-full md:w-64 bg-[#161925] border-b md:border-b-0 md:border-r border-white/5 p-4 md:p-6 flex flex-row md:flex-col gap-2 md:gap-3 overflow-x-auto md:overflow-y-auto shrink-0 md:h-[calc(100vh-80px)] z-10 [scrollbar-width:none]">
         <h2 className={`${spaceGrotesk.className} text-xl font-bold text-white mb-6 hidden md:block`}>HR<span className="text-purple-500">Portal</span></h2>
+        
+        <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider hidden md:block mt-2">Recruitment</div>
         <button onClick={() => changeTab('dashboard')} className={`whitespace-nowrap text-sm md:text-base text-left px-4 py-2 md:p-3 rounded-lg font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}>Overview</button>
         <button onClick={() => changeTab('applications')} className={`whitespace-nowrap text-sm md:text-base text-left px-4 py-2 md:p-3 rounded-lg font-medium transition-colors ${activeTab === 'applications' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}>Applicant Tracking</button>
         <button onClick={() => changeTab('manageJobs')} className={`whitespace-nowrap text-sm md:text-base text-left px-4 py-2 md:p-3 rounded-lg font-medium transition-colors ${activeTab === 'manageJobs' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}>Manage Jobs</button>
         <button onClick={() => changeTab('postJob')} className={`whitespace-nowrap text-sm md:text-base text-left px-4 py-2 md:p-3 rounded-lg font-medium transition-colors ${activeTab === 'postJob' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}>Deploy New Job</button>
+        
+        <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider hidden md:block mt-6">Internal Access</div>
+        <button onClick={() => changeTab('authorNetwork')} className={`whitespace-nowrap text-sm md:text-base text-left px-4 py-2 md:p-3 rounded-lg font-medium transition-colors ${activeTab === 'authorNetwork' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}>Author Network</button>
+        <button onClick={() => changeTab('addAgent')} className={`whitespace-nowrap text-sm md:text-base text-left px-4 py-2 md:p-3 rounded-lg font-medium transition-colors ${activeTab === 'addAgent' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}>Provision Agent</button>
+
         <div className="md:mt-auto flex items-center md:items-start whitespace-nowrap px-4 py-2 md:px-0 md:py-0 md:pt-6 border-l md:border-l-0 md:border-t border-white/5 text-sm text-gray-500 hover:text-red-400 cursor-pointer font-medium transition-colors" onClick={handleLogout}>End Secure Session</div>
       </div>
 
       <div className="flex-1 p-4 md:p-10 h-[calc(100vh-140px)] md:h-[calc(100vh-80px)] overflow-y-auto w-full">
         
-        {/* DASHBOARD */}
+        {/* DASHBOARD OVERVIEW */}
         {activeTab === 'dashboard' && (
           <div className="max-w-6xl mx-auto pb-10">
             <h1 className={`${spaceGrotesk.className} text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8`}>Command Overview</h1>
@@ -289,11 +360,11 @@ export default function HRDashboard() {
               </div>
               <div onClick={() => { changeTab('applications'); setAppFilter('In Review'); }} className="bg-[#161925] p-5 md:p-6 rounded-2xl border border-white/5 cursor-pointer hover:border-yellow-500/50 hover:bg-[#1a1e2d] transition-all group">
                 <h3 className="text-gray-400 group-hover:text-yellow-300 font-medium text-sm md:text-base">Pending Reviews</h3>
-                <p className="text-3xl md:text-4xl font-bold text-yellow-500 mt-2 md:mt-3">{(data.applications || []).filter((a: any) => a.status === 'submitted').length}</p>
+                <p className="text-3xl md:text-4xl font-bold text-yellow-500 mt-2 md:mt-3">{(data.applications || []).filter((a: any) => a.status === 'submitted' || a.status === 'in_review').length}</p>
               </div>
-              <div onClick={() => { changeTab('applications'); setAppFilter('Rejected'); }} className="bg-[#161925] p-5 md:p-6 rounded-2xl border border-white/5 cursor-pointer hover:border-red-500/50 hover:bg-[#1a1e2d] transition-all group">
-                <h3 className="text-gray-400 group-hover:text-red-300 font-medium text-sm md:text-base">Rejected / Blocked</h3>
-                <p className="text-3xl md:text-4xl font-bold text-red-500 mt-2 md:mt-3">{(data.applications || []).filter((a: any) => a.status === 'rejected').length}</p>
+              <div onClick={() => { changeTab('authorNetwork'); }} className="bg-[#161925] p-5 md:p-6 rounded-2xl border border-white/5 cursor-pointer hover:border-blue-500/50 hover:bg-[#1a1e2d] transition-all group">
+                <h3 className="text-gray-400 group-hover:text-blue-300 font-medium text-sm md:text-base">Active Agents</h3>
+                <p className="text-3xl md:text-4xl font-bold text-blue-500 mt-2 md:mt-3">{(data.agents || []).length}</p>
               </div>
             </div>
 
@@ -328,12 +399,11 @@ export default function HRDashboard() {
           </div>
         )}
 
-        {/* APPLICATIONS TRACKING */}
+        {/* --- APPLICATIONS TRACKING --- */}
         {activeTab === 'applications' && (
           <div className="max-w-7xl mx-auto pb-10">
             
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 md:mb-8">
-              {/* FIX: Filter groups now scroll horizontally on mobile */}
               <div className="flex overflow-x-auto gap-2 bg-[#161925] p-2 rounded-xl border border-white/5 w-full md:w-auto [scrollbar-width:none]">
                 {['All', 'Latest', 'In Review', 'Selected', 'Rejected'].map(filter => (
                   <button key={filter} onClick={() => setAppFilter(filter as any)} className={`whitespace-nowrap px-4 py-2 md:px-6 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all ${appFilter === filter ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
@@ -344,18 +414,13 @@ export default function HRDashboard() {
 
               <div className="flex items-center gap-2 md:gap-3 bg-[#161925] p-2 rounded-xl border border-white/5 w-full md:w-auto">
                 <span className="text-[10px] md:text-xs font-bold text-gray-500 uppercase ml-2 whitespace-nowrap">Shortlist By Job:</span>
-                <select 
-                  value={appJobFilter} 
-                  onChange={(e) => setAppJobFilter(e.target.value)} 
-                  className="bg-black border border-white/10 rounded-lg px-2 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-white font-medium outline-none cursor-pointer w-full md:w-auto"
-                >
+                <select value={appJobFilter} onChange={(e) => setAppJobFilter(e.target.value)} className="bg-black border border-white/10 rounded-lg px-2 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-white font-medium outline-none cursor-pointer w-full md:w-auto">
                   <option value="All Jobs">All Jobs</option>
                   {uniqueJobsList.map((j: any) => <option key={j} value={j}>{j}</option>)}
                 </select>
               </div>
             </div>
 
-            {/* FIX: Table wrapper added to prevent squeezing/overflow */}
             <div className="bg-[#161925] rounded-2xl border border-white/5 overflow-x-auto shadow-2xl">
               <table className="w-full text-left min-w-[800px]">
                 <thead className="bg-[#11131c] text-gray-400 text-xs md:text-sm uppercase tracking-wider">
@@ -372,10 +437,7 @@ export default function HRDashboard() {
                         </td>
                         <td className="p-4 md:p-5 font-medium text-gray-300">{app.job_title}</td>
                         <td className="p-4 md:p-5">
-                          <select 
-                            className={`bg-black border rounded-lg px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-bold outline-none cursor-pointer appearance-none ${app.status === 'submitted' ? 'border-yellow-500/30 text-yellow-500' : app.status === 'in_review' ? 'border-blue-500/30 text-blue-500' : app.status === 'selected' ? 'border-green-500/30 text-green-500' : 'border-red-500/30 text-red-500'}`}
-                            value={app.status} onChange={(e) => updateStatus(app.tracking_id, e.target.value)}
-                          >
+                          <select className={`bg-black border rounded-lg px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-bold outline-none cursor-pointer appearance-none ${app.status === 'submitted' ? 'border-yellow-500/30 text-yellow-500' : app.status === 'in_review' ? 'border-blue-500/30 text-blue-500' : app.status === 'selected' ? 'border-green-500/30 text-green-500' : 'border-red-500/30 text-red-500'}`} value={app.status} onChange={(e) => updateStatus(app.tracking_id, e.target.value)}>
                             <option value="submitted">SUBMITTED</option><option value="in_review">IN REVIEW</option><option value="selected">APPROVED</option><option value="rejected">REJECTED</option>
                           </select>
                         </td>
@@ -395,7 +457,6 @@ export default function HRDashboard() {
                               <div><span className="block text-[10px] md:text-xs text-gray-500 uppercase mb-1">Availability</span><span className="text-xs md:text-sm text-white">{app.flexible_hours || 'N/A'}</span></div>
                               <div><span className="block text-[10px] md:text-xs text-gray-500 uppercase mb-1">Gender</span><span className="text-xs md:text-sm text-white">{app.gender || 'N/A'}</span></div>
                               <div><span className="block text-[10px] md:text-xs text-gray-500 uppercase mb-1">Data Consent</span><span className="text-xs md:text-sm text-green-400">Verified ✓</span></div>
-                              
                               <div className="col-span-full flex justify-end gap-3 md:gap-4 mt-2 md:mt-4 pt-4 border-t border-white/5">
                                 <button onClick={() => deleteApplication(app.tracking_id)} className="text-red-400 text-[10px] md:text-xs font-bold hover:underline">Delete Application</button>
                                 <button onClick={() => blockApplicant(app.email)} className="text-orange-500 text-[10px] md:text-xs font-bold hover:underline">Blacklist Candidate</button>
@@ -412,7 +473,7 @@ export default function HRDashboard() {
           </div>
         )}
 
-        {/* MANAGE JOBS */}
+        {/* --- MANAGE JOBS --- */}
         {activeTab === 'manageJobs' && (
           <div className="max-w-6xl mx-auto pb-10">
              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8">
@@ -443,7 +504,6 @@ export default function HRDashboard() {
                     return !isExpired && !isHidden;
                   }).map((job: any) => {
                     const applicantCount = (data.applications || []).filter((a: any) => a.job_id === job.id).length;
-                    
                     return (
                       <tr key={job.id} className="hover:bg-[#1a1e2d] transition-colors">
                         <td className="p-4 md:p-5">
@@ -481,7 +541,7 @@ export default function HRDashboard() {
           </div>
         )}
 
-        {/* POST NEW JOB - FULL FIELDS */}
+        {/* --- POST NEW JOB (RESTORED) --- */}
         {activeTab === 'postJob' && (
           <div className="max-w-3xl mx-auto pb-10">
             <div className="bg-[#161925] p-6 md:p-10 rounded-3xl border border-white/5 shadow-2xl">
@@ -493,7 +553,6 @@ export default function HRDashboard() {
                   <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Role Title</label>
                   <input name="role" placeholder="e.g. Senior Cinematographer" required className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-purple-500 outline-none" />
                 </div>
-                {/* FIX: Form fields scale to 1 column on mobile, 2 on desktop */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                   <div>
                     <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Employment Type</label>
@@ -532,7 +591,7 @@ export default function HRDashboard() {
           </div>
         )}
 
-        {/* EDIT EXISTING JOB - FULL FIELDS */}
+        {/* --- EDIT EXISTING JOB (RESTORED) --- */}
         {activeTab === 'editJob' && (
           <div className="max-w-3xl mx-auto pb-10">
             {editingJob ? (
@@ -589,6 +648,160 @@ export default function HRDashboard() {
             )}
           </div>
         )}
+
+        {/* --- MANAGE AGENTS TABLE --- */}
+        {activeTab === 'authorNetwork' && (
+          <div className="max-w-6xl mx-auto pb-10">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8">
+               <h1 className={`${spaceGrotesk.className} text-2xl md:text-3xl font-bold text-white`}>Syndicate Agents</h1>
+               <button onClick={() => changeTab('addAgent')} className="bg-purple-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-purple-500 transition-colors">
+                 + Provision Agent
+               </button>
+            </div>
+            
+            <div className="bg-[#161925] rounded-2xl border border-white/5 overflow-x-auto shadow-2xl">
+              <table className="w-full text-left min-w-[700px]">
+                <thead className="bg-[#11131c] text-gray-400 text-xs md:text-sm uppercase tracking-wider">
+                  <tr>
+                    <th className="p-4 md:p-5 font-semibold">Agent Profile</th>
+                    <th className="p-4 md:p-5 font-semibold">Title / Role</th>
+                    <th className="p-4 md:p-5 font-semibold">Network Email</th>
+                    <th className="p-4 md:p-5 font-semibold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-sm md:text-base">
+                  {(data.agents || []).length === 0 && (<tr><td colSpan={4} className="p-10 text-center text-gray-500 text-sm">No agents provisioned yet.</td></tr>)}
+                  {(data.agents || []).map((agent: any) => (
+                    <tr key={agent.id} className="hover:bg-[#1a1e2d] transition-colors">
+                      <td className="p-4 md:p-5 flex items-center gap-4">
+                        <img src={agent.avatar || `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${agent.id}`} alt={agent.name} className="w-10 h-10 rounded-full border border-white/10 bg-black" />
+                        <div>
+                          <div className="font-bold text-white">{agent.name}</div>
+                          <div className="text-[10px] md:text-xs text-purple-400 font-mono mt-1">ID: {agent.id}</div>
+                        </div>
+                      </td>
+                      <td className="p-4 md:p-5 font-medium text-gray-300">{agent.role || 'Unassigned'}</td>
+                      <td className="p-4 md:p-5 text-gray-400 text-sm">{agent.email}</td>
+                      <td className="p-4 md:p-5 flex items-center justify-end gap-3 md:gap-4 mt-2">
+                        <button onClick={() => { setEditingAgent(agent); changeTab('editAgent'); }} className="text-blue-400 text-[10px] md:text-xs font-bold hover:underline">Modify</button>
+                        <button onClick={() => handleDeleteAgent(agent.id)} className="text-red-500 text-[10px] md:text-xs font-bold hover:underline">Revoke Access</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* --- PROVISION NEW AGENT (MANUAL CREDENTIALS) --- */}
+        {activeTab === 'addAgent' && (
+          <div className="max-w-3xl mx-auto pb-10">
+            <div className="bg-[#161925] p-6 md:p-10 rounded-3xl border border-white/5 shadow-2xl">
+              <h3 className={`${spaceGrotesk.className} text-2xl md:text-3xl font-bold text-white mb-2`}>Provision New Agent</h3>
+              <p className="text-gray-400 mb-6 md:mb-8 text-xs md:text-sm">Set secure login credentials to integrate a new author into the network.</p>
+              
+              <form onSubmit={handleAddAgent} className="flex flex-col gap-4 md:gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Agent ID (Username)</label>
+                    <input name="username" placeholder="e.g. agent_cipher" required className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-purple-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Full Name</label>
+                    <input name="name" placeholder="e.g. John Doe" required className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-purple-500 outline-none" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Secure Email (For OTPs & Login)</label>
+                    <input name="email" type="email" placeholder="agent@example.com" required className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-purple-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Role / Title (Optional)</label>
+                    <input name="role" placeholder="e.g. Field Investigator" className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-purple-500 outline-none" />
+                  </div>
+                </div>
+                
+                {/* MANUAL CREDENTIAL INPUTS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Manual Password</label>
+                    <input name="password" required className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-purple-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">4-Digit PIN</label>
+                    <input name="pin" type="text" maxLength={4} minLength={4} pattern="\d{4}" placeholder="e.g. 1234" required className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-purple-500 outline-none" />
+                  </div>
+                </div>
+
+                <div className="bg-black/50 p-4 rounded-xl border border-white/5 mt-2">
+                  <p className="text-xs text-gray-400 mb-2 font-bold uppercase tracking-wider">Security Automation Protocol:</p>
+                  <ul className="list-disc list-inside text-xs text-gray-500 space-y-1">
+                    <li>Credentials instantly dispatched to target email via Resend.</li>
+                    <li>Passwords and PINs are securely hashed with SHA-256 before database insertion.</li>
+                  </ul>
+                </div>
+
+                <button disabled={isDeployingAgent} type="submit" className="w-full bg-purple-600 text-white p-3 md:p-4 rounded-xl font-bold hover:bg-purple-500 transition-all mt-2 md:mt-4 uppercase text-xs md:text-sm disabled:opacity-50">
+                  {isDeployingAgent ? 'Provisioning...' : 'Deploy Agent Node'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* --- EDIT EXISTING AGENT (WITH OPTIONAL OVERWRITES) --- */}
+        {activeTab === 'editAgent' && (
+          <div className="max-w-3xl mx-auto pb-10">
+            {editingAgent ? (
+              <div className="bg-[#161925] p-6 md:p-10 rounded-3xl border border-blue-500/30 shadow-2xl relative">
+                <button onClick={() => changeTab('authorNetwork')} className="absolute top-4 right-4 md:top-8 md:right-8 text-xs md:text-sm font-bold text-gray-500 hover:text-white">Cancel Edit ✕</button>
+                <h3 className={`${spaceGrotesk.className} text-xl md:text-3xl font-bold text-white mb-2`}>Modify Agent Profile</h3>
+                <p className="text-gray-400 mb-6 md:mb-8 text-xs md:text-sm">Updating records for ID: <strong className="text-blue-400 font-mono">{editingAgent.id}</strong></p>
+                
+                <form onSubmit={handleEditAgent} className="flex flex-col gap-4 md:gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                    <div>
+                      <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Full Name</label>
+                      <input name="name" defaultValue={editingAgent.name} required className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-blue-500 outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Network Email</label>
+                      <input name="email" type="email" defaultValue={editingAgent.email} required className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-blue-500 outline-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Role / Title</label>
+                    <input name="role" defaultValue={editingAgent.role} className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-blue-500 outline-none" />
+                  </div>
+
+                  <div className="border-t border-white/10 pt-4 mt-2">
+                    <p className="text-[10px] md:text-xs text-blue-400 mb-4 font-bold uppercase tracking-wider">Credential Overrides</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                      <div>
+                        <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Update Password</label>
+                        <input name="password" placeholder="Leave blank to keep current" className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-blue-500 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2">Update 4-Digit PIN</label>
+                        <input name="pin" type="text" maxLength={4} minLength={4} pattern="\d{4}" placeholder="Leave blank to keep current" className="w-full bg-black border border-white/10 rounded-xl p-3 md:p-4 text-sm text-white focus:border-blue-500 outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button type="submit" className="w-full bg-blue-600 text-white p-3 md:p-4 rounded-xl font-bold hover:bg-blue-500 transition-all mt-2 md:mt-4 text-xs md:text-sm uppercase">Save Agent Changes</button>
+                </form>
+              </div>
+            ) : (
+              <div className="text-center p-10 md:p-20 bg-[#161925] border border-white/5 rounded-2xl">
+                <p className="text-gray-400 mb-4 text-sm">No agent selected for modification.</p>
+                <button onClick={() => changeTab('authorNetwork')} className="bg-purple-600 text-white px-4 md:px-6 py-2 rounded-lg font-bold text-sm md:text-base">Return to Network</button>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
