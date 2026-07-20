@@ -2,6 +2,8 @@ import { ImageResponse } from 'next/og';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic'; // 🚨 THE FIX: Busts the Next.js cache so the metadata image generates live
+
 export const alt = 'Reality Decoded Transmission';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';

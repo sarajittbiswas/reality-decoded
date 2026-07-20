@@ -10,6 +10,7 @@ import Link from 'next/link';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic'; // 🚨 THE FIX: Busts the Next.js cache so the time check is always live
 
 // ==========================================
 // UTILITY FUNCTIONS
