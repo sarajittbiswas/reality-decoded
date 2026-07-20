@@ -21,6 +21,12 @@ const stripHtml = (html: string) => {
   return html.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
 };
 
+// 🚨 TIMEZONE FIX: Force Cloudflare to read the date string as IST (+05:30)
+const getISTDate = (dateStr: string) => {
+  if (!dateStr) return new Date();
+  return new Date(dateStr.replace(' ', 'T') + '+05:30');
+};
+
 export default async function Home() {
   const db = (getRequestContext().env as any).reality_decoded_db;
   
@@ -29,10 +35,17 @@ export default async function Home() {
     'SELECT * FROM videos ORDER BY created_at DESC LIMIT 3'
   ).all();
 
-  // 2. Fetch Latest 3 Published Blogs
-  const { results: latestArticles } = await db.prepare(
-    "SELECT * FROM articles WHERE status = 'published' ORDER BY created_at DESC LIMIT 3"
+  // 2. Fetch Published & Scheduled Blogs
+  const { results: allArticles } = await db.prepare(
+    "SELECT * FROM articles WHERE status IN ('published', 'scheduled') ORDER BY created_at DESC"
   ).all();
+
+  // 🚨 Filter using JavaScript IST Time, grabbing the latest 3
+  const now = new Date();
+  const latestArticles = allArticles.filter((a: any) => 
+    a.status === 'published' || 
+    (a.status === 'scheduled' && getISTDate(a.scheduled_for) <= now)
+  ).slice(0, 3);
 
   return (
     <main className="w-full bg-[#0a0a0a] text-white overflow-hidden">

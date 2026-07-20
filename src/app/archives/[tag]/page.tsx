@@ -5,25 +5,44 @@ import Link from 'next/link';
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 export const runtime = 'edge';
 
-// 1. Update the type definition to Promise
+// ==========================================
+// TIMEZONE FIX FOR DEPLOYMENTS
+// ==========================================
+const getISTDate = (dateStr: string) => {
+  if (!dateStr) return new Date();
+  return new Date(dateStr.replace(' ', 'T') + '+05:30');
+};
+
+// ==========================================
+// MAIN ARCHIVE COMPONENT
+// ==========================================
 export default async function TagArchivePage({ params }: { params: Promise<{ tag: string }> }) {
    
-   // 2. Await the params first
    const { tag } = await params;
-
-   // 3. Now use the variable 'tag' directly
    const decodedTag = decodeURIComponent(tag).replace(/^_/, '').trim();
    
    const db = (getRequestContext().env as any).reality_decoded_db;
-   // ... rest of your code
   
-  // 🚨 QUERY: We force the comma padding so 'news' matches 'intel,news,ufo' perfectly
-  const { results: articles } = await db.prepare(
+  // 🚨 THE BUG FIX: The query now universally searches BOTH the 'category' and 'tags' columns!
+  const searchQuery = decodedTag.toLowerCase();
+  const likeQuery = `%,${searchQuery},%`;
+
+  const { results: allArticles } = await db.prepare(
     `SELECT * FROM articles 
-     WHERE status = 'published' 
-     AND (',' || COALESCE(tags, '') || ',') LIKE ? 
+     WHERE status IN ('published', 'scheduled') 
+     AND (
+       LOWER(category) = ? 
+       OR LOWER(',' || COALESCE(tags, '') || ',') LIKE ?
+     )
      ORDER BY created_at DESC`
-  ).bind(`%,${decodedTag},%`).all();
+  ).bind(searchQuery, likeQuery).all();
+
+  // Filter using JavaScript IST Time to ensure scheduled posts only un-hide exactly on time
+  const now = new Date();
+  const articles = allArticles.filter((a: any) => 
+    a.status === 'published' || 
+    (a.status === 'scheduled' && getISTDate(a.scheduled_for) <= now)
+  );
 
   return (
     <main className="w-full bg-[#050505] text-white min-h-screen pt-40 pb-32">
@@ -46,13 +65,16 @@ export default async function TagArchivePage({ params }: { params: Promise<{ tag
             articles.map((article: any) => (
               <Link href={`/blogs/${article.slug}`} key={article.id} className="group block bg-[#111] border border-white/5 rounded-2xl overflow-hidden hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all duration-300">
                 <div className="p-6">
+                  
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-xs font-bold uppercase tracking-widest text-purple-400">{article.category}</span>
                     <span className="text-xs text-gray-500">{new Date(article.created_at).toLocaleDateString()}</span>
                   </div>
+                  
                   <h2 className={`${spaceGrotesk.className} text-xl font-bold text-gray-200 mb-3 group-hover:text-white transition-colors`}>
                     {article.title}
                   </h2>
+                  
                   <div className="flex flex-wrap gap-2 mt-4">
                     {(article.tags || '').split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string, i: number) => (
                       <span key={i} className="text-[10px] uppercase tracking-widest border border-white/10 px-2 py-1 rounded text-gray-400 group-hover:border-purple-500/30 group-hover:text-purple-300">
@@ -60,11 +82,13 @@ export default async function TagArchivePage({ params }: { params: Promise<{ tag
                       </span>
                     ))}
                   </div>
+                  
                 </div>
               </Link>
             ))
           )}
         </div>
+        
       </div>
     </main>
   );

@@ -16,16 +16,29 @@ const getFirstImage = (html: string) => {
   return match ? match[1] : null;
 };
 
+// 🚨 TIMEZONE FIX: Force Cloudflare to read the date string as IST (+05:30)
+const getISTDate = (dateStr: string) => {
+  if (!dateStr) return new Date();
+  return new Date(dateStr.replace(' ', 'T') + '+05:30');
+};
+
 export default async function ArchivesPage() {
   const db = (getRequestContext().env as any).reality_decoded_db;
 
   // 1. Fetch Videos
   const { results: videos } = await db.prepare('SELECT * FROM videos ORDER BY created_at DESC').all();
 
-  // 2. Fetch Live Articles
-  const { results: articles } = await db.prepare(
-    "SELECT * FROM articles WHERE status = 'published' ORDER BY created_at DESC"
+  // 2. Fetch Published & Scheduled Articles
+  const { results: allArticles } = await db.prepare(
+    "SELECT * FROM articles WHERE status IN ('published', 'scheduled') ORDER BY created_at DESC"
   ).all();
+
+  // 🚨 Filter using JavaScript IST Time
+  const now = new Date();
+  const articles = allArticles.filter((a: any) => 
+    a.status === 'published' || 
+    (a.status === 'scheduled' && getISTDate(a.scheduled_for) <= now)
+  );
 
   // 3. Transform Articles to match the ArchiveBoard data structure
   const liveBlogs = articles.map((article: any) => ({
