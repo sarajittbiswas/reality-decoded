@@ -1,8 +1,11 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
-import { Space_Grotesk } from 'next/font/google';
+import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import ArchiveBoard from '@/components/ArchiveBoard';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'] });
+const jetBrainsMono = JetBrains_Mono({ subsets: ['latin'] });
+
 export const runtime = 'edge';
 
 // Utility: Strip HTML for description preview
@@ -28,7 +31,7 @@ export default async function ArchivesPage() {
   // 1. Fetch Videos
   const { results: videos } = await db.prepare('SELECT * FROM videos ORDER BY created_at DESC').all();
 
-  // 2. 🚨 UPGRADE: Fetch ALL agent profile columns to pass into the Board component
+  // 2. Fetch ALL agent profile columns to pass into the Board component
   const { results: allArticles } = await db.prepare(`
     SELECT articles.*, 
            sa.id as agent_id, sa.name as agent_name, sa.avatar as agent_avatar, 
@@ -41,7 +44,7 @@ export default async function ArchivesPage() {
     ORDER BY created_at DESC
   `).all();
 
-  // 🚨 Filter using JavaScript IST Time
+  // Filter using JavaScript IST Time
   const now = new Date();
   const articles = allArticles.filter((a: any) => 
     a.status === 'published' || 
@@ -65,8 +68,12 @@ export default async function ArchivesPage() {
   }));
 
   return (
-    <main className="w-full bg-[#0a0a0a] text-white min-h-screen overflow-hidden relative pb-32">
+    <main className={`w-full bg-[#050505] text-zinc-300 min-h-screen overflow-hidden relative pb-32 ${inter.className}`}>
       
+      {/* GLOBAL BACKGROUND ELEMENTS (Unified seamless texture) */}
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] opacity-[0.25] pointer-events-none z-0"></div>
+      <div className="absolute top-0 inset-x-0 h-[800px] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.04),transparent_70%)] pointer-events-none z-0"></div>
+
       <style>{`
         @keyframes fade-in-up {
           0% { opacity: 0; transform: translateY(30px); }
@@ -74,29 +81,27 @@ export default async function ArchivesPage() {
         }
       `}</style>
 
-      {/* Ambient Background Glows */}
-      <div className="absolute top-0 left-1/4 w-[50%] h-[40%] bg-purple-900/15 blur-[150px] rounded-full pointer-events-none z-0"></div>
-      <div className="absolute bottom-1/4 right-0 w-[40%] h-[50%] bg-red-900/10 blur-[150px] rounded-full pointer-events-none z-0"></div>
-
       <div className="max-w-7xl mx-auto px-6 pt-32 relative z-10">
         
-        <div className="mb-12 text-center flex flex-col items-center animate-[fade-in-up_0.8s_ease-out_forwards]">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 text-purple-400 text-sm font-semibold border border-purple-500/20 mb-6 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+        {/* Header */}
+        <div className="mb-16 text-center flex flex-col items-center animate-[fade-in-up_0.8s_ease-out_forwards]">
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-white/5 text-zinc-300 text-[10px] font-bold uppercase tracking-widest mb-6 ${jetBrainsMono.className}`}>
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zinc-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-zinc-300 shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
             </span>
             Syndicate Master Database
           </div>
-          <h1 className={`${spaceGrotesk.className} text-5xl md:text-7xl font-extrabold tracking-tight mb-4 uppercase`}>
-            Decoded <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-red-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">Archives.</span>
+          
+          <h1 className={`${spaceGrotesk.className} text-5xl md:text-7xl font-extrabold tracking-tight mb-5 uppercase text-transparent bg-clip-text bg-gradient-to-b from-white via-zinc-200 to-zinc-600 drop-shadow-sm`}>
+            Decoded Archives.
           </h1>
-          <p className="text-lg text-gray-400 max-w-2xl">
+          <p className="text-sm md:text-base text-zinc-500 max-w-2xl font-light">
             Access our complete unedited video logs and highly classified written field reports. Toggle databases below.
           </p>
         </div>
 
-        {/* Passing the live DB data (videos & liveBlogs) instead of mock data */}
+        {/* Passing the live DB data */}
         <ArchiveBoard videos={videos} blogs={liveBlogs} />
 
       </div>

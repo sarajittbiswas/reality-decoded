@@ -16,7 +16,6 @@ export default function Watermark() {
     });
   };
 
-  // Softened the core of the gradient (5% instead of 15%) for a smoother fade
   const maskString = `radial-gradient(circle 90px at ${position.x}px ${position.y}px, black 5%, transparent 100%)`;
 
   return (
@@ -27,14 +26,14 @@ export default function Watermark() {
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      {/* 1. Resting State (Dark Stealth Grey) */}
-      <h1 className="absolute font-sans text-[13.8vw] font-bold tracking-tight leading-none text-[#111111] whitespace-nowrap select-none bottom-0 translate-y-[22%] w-full text-center flex justify-center">
+      {/* 1. Resting State (Blends perfectly into #050505 canvas) */}
+      <h1 className="absolute font-sans text-[13.8vw] font-bold tracking-tight leading-none text-white/[0.02] whitespace-nowrap select-none bottom-0 translate-y-[22%] w-full text-center flex justify-center">
         Reality Decoded
       </h1>
 
-      {/* 2. Hover Reveal State (Changed to #a1a1aa for a darker, moody metallic glow) */}
+      {/* 2. Hover Reveal State (Sleek Zinc Metallic Glow) */}
       <h1 
-        className="absolute font-sans text-[13.8vw] font-bold tracking-tight leading-none text-[#a1a1aa] whitespace-nowrap select-none bottom-0 translate-y-[22%] w-full text-center flex justify-center pointer-events-none"
+        className="absolute font-sans text-[13.8vw] font-bold tracking-tight leading-none text-zinc-400 whitespace-nowrap select-none bottom-0 translate-y-[22%] w-full text-center flex justify-center pointer-events-none"
         style={{
           WebkitMaskImage: maskString,
           maskImage: maskString,
