@@ -1,12 +1,13 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import Link from 'next/link';
-import { Space_Grotesk } from 'next/font/google';
+import { Space_Grotesk, Inter } from 'next/font/google';
 import AuthorHoverCard from '@/components/AuthorHoverCard';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const runtime = 'edge';
-export const dynamic = 'force-dynamic'; // 🚨 THE FIX: Busts the Next.js cache so the time check is always live
+export const dynamic = 'force-dynamic'; 
 
 const getFirstImage = (html: string) => {
   const match = html.match(/<img[^>]+src="([^">]+)"/);
@@ -45,26 +46,26 @@ export default async function PublicBlogFeed() {
   );
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white pt-32 pb-20 px-6 font-mono relative overflow-hidden">
+    <main className={`min-h-screen bg-[#030303] text-zinc-300 pt-32 pb-20 px-6 relative overflow-hidden ${inter.className}`}>
       
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-purple-900/20 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+      {/* Premium Ambient Background (No Grids) */}
+      <div className="absolute top-0 inset-x-0 h-[800px] bg-[radial-gradient(ellipse_at_top,rgba(88,28,135,0.12),transparent_70%)] pointer-events-none z-0"></div>
       
       <div className="max-w-6xl mx-auto relative z-10">
         
-        <header className="mb-16 text-center border-b border-white/10 pb-12">
-          <h1 className={`${spaceGrotesk.className} text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]`}>
+        <header className="mb-16 text-center pb-12">
+          <h1 className={`${spaceGrotesk.className} text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight`}>
             Decoded Intel
           </h1>
-          <p className="text-purple-400 text-sm tracking-widest uppercase font-bold shadow-purple-500/50">
-            [ Verified Field Reports & Syndicate Transmissions ]
+          <p className="text-zinc-500 text-sm tracking-widest uppercase font-medium">
+            Verified Field Reports & Investigations
           </p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {articles.length === 0 ? (
-            <div className="col-span-full border border-dashed border-white/10 p-12 text-center rounded-xl text-gray-500 uppercase tracking-widest text-sm">
-              No declassified transmissions available at this time.
+            <div className="col-span-full border border-zinc-800 p-12 text-center rounded-2xl text-zinc-500 uppercase tracking-widest text-sm bg-zinc-900/20 backdrop-blur-xl">
+              No public transmissions available at this time.
             </div>
           ) : (
             articles.map((article: any) => {
@@ -80,57 +81,58 @@ export default async function PublicBlogFeed() {
               return (
                 <Link href={`/blogs/${article.slug}`} key={article.id} className="relative group block h-full hover:z-50">
                   
-                  <article className="bg-[#0a0a0a]/80 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-purple-500/50 hover:bg-[#111] transition-all duration-500 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:-translate-y-1 flex flex-col h-full">
+                  {/* 🚨 FIX: Removed overflow-hidden here so the hover card can escape the boundaries */}
+                  <article className="bg-white/[0.02] backdrop-blur-2xl border border-white/5 rounded-2xl hover:border-white/15 hover:bg-white/[0.04] transition-all duration-500 hover:shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex flex-col h-full">
                     
-                    <div className="w-full h-48 relative overflow-hidden rounded-t-2xl bg-black/50 border-b border-white/5">
+                    {/* Added overflow-hidden exclusively to the image container to keep top corners rounded */}
+                    <div className="w-full h-52 relative overflow-hidden rounded-t-2xl bg-zinc-900 border-b border-white/5">
                       {thumbnailUrl ? (
                         <img 
                           src={thumbnailUrl} 
                           alt={article.title} 
-                          className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
+                          className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-900/20 to-black">
-                          <span className="text-purple-500/30 font-bold tracking-widest uppercase text-xs">No Image Data</span>
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
+                          <span className="text-zinc-600 font-medium tracking-widest uppercase text-xs">No Image</span>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent pointer-events-none"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/80 to-transparent pointer-events-none"></div>
                     </div>
                     
-                    <div className="p-6 flex flex-col flex-grow rounded-b-2xl bg-[#0a0a0a]/80 group-hover:bg-[#111] transition-colors">
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-[10px] uppercase tracking-widest text-purple-400 border border-purple-500/30 bg-purple-500/10 px-2 py-1 rounded shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                    <div className="p-8 flex flex-col flex-grow rounded-b-2xl relative">
+                      <div className="flex justify-between items-center mb-5">
+                        <span className="text-[10px] uppercase tracking-widest text-purple-300 font-semibold bg-purple-500/10 px-2.5 py-1 rounded-full">
                           {article.category || 'INTEL'}
                         </span>
-                        <time className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
-                          {new Date(article.created_at).toLocaleDateString()}
+                        <time className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">
+                          {new Date(article.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </time>
                       </div>
                       
-                      <h2 className={`${spaceGrotesk.className} text-xl font-bold text-gray-200 group-hover:text-white mb-3 transition-colors line-clamp-2`}>
+                      <h2 className={`${spaceGrotesk.className} text-xl font-bold text-zinc-100 group-hover:text-white mb-4 transition-colors leading-snug line-clamp-2`}>
                         {article.title}
                       </h2>
                       
-                      <p className="text-xs text-gray-500 line-clamp-3 mb-6 flex-grow leading-relaxed">
-                        {article.excerpt || "Classified intel transmission. Access the full report."}
+                      <p className="text-sm text-zinc-400 line-clamp-3 mb-8 flex-grow leading-relaxed font-light">
+                        {article.excerpt || "Access the full investigation report."}
                       </p>
 
-                      <div className="flex items-center justify-between mt-auto border-t border-white/5 pt-4">
+                      <div className="flex items-center justify-between mt-auto pt-5 border-t border-white/5 relative z-20">
                         {agentObj ? (
-                          /* 🚨 THE FIX: Wrapper DIV removed here! */
                           <AuthorHoverCard agent={agentObj}>
-                            <div className="flex items-center gap-2 group/authcard">
-                              <img src={agentObj.avatar || '/default-cover.png'} className="w-5 h-5 rounded-full border border-purple-500/30 group-hover/authcard:border-purple-400 transition-colors" />
-                              <span className="text-[10px] text-gray-400 group-hover/authcard:text-white uppercase tracking-widest font-bold transition-colors">
-                                {agentObj.name.split(' ')[0]}
+                            <div className="flex items-center gap-3 group/authcard">
+                              <img src={agentObj.avatar || '/default-cover.png'} className="w-6 h-6 rounded-full border border-white/10 group-hover/authcard:border-white/30 transition-colors object-cover" />
+                              <span className="text-xs text-zinc-400 group-hover/authcard:text-zinc-200 font-medium transition-colors">
+                                {agentObj.name}
                               </span>
                             </div>
                           </AuthorHoverCard>
                         ) : (
-                          <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">By {article.author}</span>
+                          <span className="text-xs text-zinc-500 font-medium">By {article.author}</span>
                         )}
-                        <div className="flex items-center text-[10px] font-bold text-gray-500 group-hover:text-purple-400 transition-colors uppercase tracking-widest">
-                          Decrypt <span className="ml-2 group-hover:translate-x-1 transition-transform">&rarr;</span>
+                        <div className="flex items-center text-xs font-medium text-zinc-500 group-hover:text-white transition-colors">
+                          Read <span className="ml-1.5 group-hover:translate-x-1 transition-transform">&rarr;</span>
                         </div>
                       </div>
 
