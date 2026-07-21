@@ -3,13 +3,14 @@ import Link from 'next/link';
 import { Space_Grotesk } from 'next/font/google';
 import Newsletter from '@/components/Newsletter';
 import StatCounter from '@/components/StatCounter';
+import Watermark from '@/components/Watermark';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
-// --- DATA EXTRACTOR HELPERS FOR BLOGS ---
+// --- ORIGINAL DATA EXTRACTOR HELPERS ---
 const getFirstImage = (html: string) => {
   if (!html) return null;
   const match = html.match(/<img[^>]+src="([^">]+)"/);
@@ -21,26 +22,33 @@ const stripHtml = (html: string) => {
   return html.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
 };
 
-// 🚨 TIMEZONE FIX: Force Cloudflare to read the date string as IST (+05:30)
+// ORIGINAL TIMEZONE FIX (Untouched)
 const getISTDate = (dateStr: string) => {
   if (!dateStr) return new Date();
   return new Date(dateStr.replace(' ', 'T') + '+05:30');
 };
 
+const testimonials = [
+  { quote: "The level of research in these documentaries is unmatched. It completely changed how I view modern tech.", author: "Alex M.", role: "Subscriber" },
+  { quote: "Finally, a platform that doesn't just scratch the surface. The 'Silicon Horizon' doc was mind-blowing.", author: "Sarah J.", role: "Supporter" },
+  { quote: "The production quality is insane for an independent creator. Keep bringing the truth to light.", author: "Marcus T.", role: "Viewer" },
+  { quote: "Reality Decoded is the only channel I trust for deep-dive tech investigations. Absolute cinema.", author: "David K.", role: "Insider" },
+  { quote: "Their breakdown of the data broker industry made me rethink my entire digital footprint.", author: "Elena R.", role: "Analyst" },
+  { quote: "Unbiased, raw, and terrifyingly accurate. This is what journalism is supposed to be.", author: "James W.", role: "Subscriber" },
+];
+
 export default async function Home() {
   const db = (getRequestContext().env as any).reality_decoded_db;
   
-  // 1. Fetch Latest 3 Videos
+  // ORIGINAL DB FETCHING LOGIC (Untouched)
   const { results: latestVideos } = await db.prepare(
     'SELECT * FROM videos ORDER BY created_at DESC LIMIT 3'
   ).all();
 
-  // 2. Fetch Published & Scheduled Blogs
   const { results: allArticles } = await db.prepare(
     "SELECT * FROM articles WHERE status IN ('published', 'scheduled') ORDER BY created_at DESC"
   ).all();
 
-  // 🚨 Filter using JavaScript IST Time, grabbing the latest 3
   const now = new Date();
   const latestArticles = allArticles.filter((a: any) => 
     a.status === 'published' || 
@@ -48,9 +56,8 @@ export default async function Home() {
   ).slice(0, 3);
 
   return (
-    <main className="w-full bg-[#0a0a0a] text-white overflow-hidden">
+    <main className="w-full bg-[#0a0a0a] text-white overflow-x-hidden">
       
-      {/* SCROLL ANIMATION STYLES & MOBILE FALLBACK */}
       <style>{`
         @keyframes fade-in-up {
           0% { opacity: 0; transform: translateY(40px); }
@@ -68,6 +75,17 @@ export default async function Home() {
           .scroll-reveal {
             animation: fade-in-up 1s ease-out forwards;
           }
+        }
+        /* Marquee Animations Brought Back */
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          animation: marquee 40s linear infinite;
+        }
+        .animate-marquee:hover {
+          animation-play-state: paused;
         }
       `}</style>
 
@@ -110,35 +128,22 @@ export default async function Home() {
             </Link>
           </div>
 
-          <div className="
-            relative w-full aspect-[4/3] rounded-3xl overflow-hidden group cursor-pointer
-            border border-white/10 bg-[#111]
-            transition-all duration-500 ease-out
-            hover:border-purple-500/50 hover:shadow-[0_0_40px_rgba(168,85,247,0.4)]
-            hover:-translate-y-2
-          ">
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 group-hover:via-purple-500 to-transparent transition-colors duration-500 z-30"></div>
-
-            <img 
-              src="/yt_img.png" 
-              alt="YouTube Channel" 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 group-hover:-translate-x-4 z-10"
-            />
-            
-            <img 
-              src="/ig_img.png" 
-              alt="Instagram Profile" 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 group-hover:translate-x-4 z-20"
-              style={{ clipPath: 'polygon(55% 0, 100% 0, 100% 100%, 35% 100%)' }}
-            />
+          <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden p-[3px] group cursor-pointer shadow-[0_0_40px_rgba(168,85,247,0.2)] hover:shadow-[0_0_60px_rgba(168,85,247,0.4)] transition-all duration-700 ease-out hover:-translate-y-2">
+            <div className="absolute inset-[-150%] [animation:spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_40%,#a855f7_80%,#d8b4fe_95%,#ffffff_100%)] z-0 opacity-100 transition-opacity duration-500"></div>
+            <div className="relative w-full h-full bg-[#111] rounded-[21px] overflow-hidden z-10 border-2 border-black/80 group-hover:border-purple-500/20 transition-colors duration-500">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 group-hover:via-purple-500 to-transparent transition-colors duration-500 z-30"></div>
+              <img src="/yt_img.png" alt="YouTube Channel" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 group-hover:-translate-x-4 z-10" />
+              <img src="/ig_img.png" alt="Instagram Profile" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 group-hover:translate-x-4 z-20" style={{ clipPath: 'polygon(65% 0, 100% 0, 100% 100%, 35% 100%)' }} />
+              <div className="absolute inset-0 z-25 pointer-events-none shadow-[-5px_0_15px_rgba(0,0,0,0.5)]" style={{ clipPath: 'polygon(65% 0, 100% 0, 100% 100%, 35% 100%)' }}></div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 2. SYNDICATE REACH (SOCIAL PROOF) */}
+      {/* 2. SYNDICATE REACH */}
       <section className="relative z-20 py-16 bg-[#050505] border-y border-white/5">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { end: 500, suffix: 'K+', label: 'YouTube Subscribers', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
               { end: 20, suffix: 'K+', label: 'LinkedIn Network', icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' },
@@ -148,10 +153,7 @@ export default async function Home() {
               <div key={i} className="group relative bg-[#0a0a0a] border border-white/5 rounded-2xl p-8 hover:bg-[#111] transition-all duration-500 overflow-hidden hover:-translate-y-1">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-purple-500/0 to-purple-500/10 group-hover:to-purple-500/20 transition-all duration-500"></div>
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-purple-500 group-hover:w-full transition-all duration-500 ease-out shadow-[0_0_10px_#a855f7]"></div>
-                
                 <svg className="w-8 h-8 text-purple-500/50 group-hover:text-purple-400 mb-4 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d={stat.icon} /></svg>
-                
-                {/* DYNAMIC TICKER */}
                 <StatCounter end={stat.end} suffix={stat.suffix} label={stat.label} />
               </div>
             ))}
@@ -159,7 +161,7 @@ export default async function Home() {
         </div>
       </section>
       
-      {/* 3. LATEST INVESTIGATIONS (MIXED GRID WITH STRICT IMAGE LOGIC) */}
+      {/* 3. LATEST INVESTIGATIONS */}
       <section id="investigations" className="bg-[#0a0a0a] py-32 relative scroll-reveal">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-4">
@@ -169,7 +171,7 @@ export default async function Home() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               latestVideos[0] ? { ...latestVideos[0], type: 'video' } : null,
               latestArticles[0] ? { ...latestArticles[0], type: 'blog' } : null,
@@ -182,7 +184,6 @@ export default async function Home() {
               const isVideo = item.type === 'video';
               const targetUrl = isVideo ? `/watch/${item.id}` : `/blogs/${item.slug || item.id}`;
               
-              // STRICT IMAGE LOGIC
               let imageUrl = null;
               if (isVideo) {
                 const ytId = item.url && item.url.includes('v=') ? item.url.split('v=')[1].split('&')[0] : null;
@@ -190,19 +191,14 @@ export default async function Home() {
               } else {
                 imageUrl = getFirstImage(item.content);
               }
-              
-              const descriptionText = !isVideo ? stripHtml(item.content) : item.description;
 
               return (
                 <Link href={targetUrl} key={`${item.type}-${item.id}-${idx}`} className="block group">
                   <article className="relative rounded-2xl overflow-hidden h-full flex flex-col bg-[#111111]/80 backdrop-blur-xl border border-white/5 transition-all duration-500 ease-out hover:-translate-y-2 hover:bg-[#161616]/90 hover:border-purple-500/50 shadow-[0_5px_20px_rgba(168,85,247,0.05)] hover:shadow-[0_10px_40px_rgba(168,85,247,0.2)]">
-                    
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 group-hover:via-purple-500/50 to-transparent transition-colors duration-500 z-10"></div>
                     
                     <div className="aspect-video bg-black overflow-hidden relative border-b border-white/5">
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent z-10 opacity-60"></div>
-                      
-                      {/* RENDER EITHER THE IMAGE OR THE FALLBACK BLOCK */}
                       {imageUrl ? (
                         <img src={imageUrl} alt={item.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out" />
                       ) : (
@@ -247,7 +243,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* THE MISSION (FUTURISTIC RADAR) */}
+      {/* THE MISSION */}
       <section className="bg-[#111] py-32 border-y border-white/5 relative overflow-hidden">
         <style>{`
           @keyframes radar-scan {
@@ -295,66 +291,62 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 3. TESTIMONIALS SECTION */}
-      <section className="bg-[#0f0f0f] py-32 border-t border-white/5 relative scroll-reveal">
+      {/* 4. TESTIMONIALS SECTION (Marquee restored with Beam Borders) */}
+      <section className="bg-[#0f0f0f] py-24 border-t border-white/5 relative scroll-reveal overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-64 bg-purple-600/5 blur-[120px] rounded-full pointer-events-none"></div>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <h2 className="text-3xl md:text-5xl font-extrabold text-center mb-16 text-white">
+        <div className="max-w-7xl mx-auto px-6 relative z-10 mb-16 text-center">
+          <h2 className={`${spaceGrotesk.className} text-3xl md:text-5xl font-extrabold text-white`}>
             What Viewers Are Saying
           </h2>
+        </div>
+        
+        {/* Full width flex container with fade edges */}
+        <div className="relative w-full flex overflow-hidden">
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="group relative bg-[#141414]/80 backdrop-blur-sm p-8 rounded-2xl border border-white/5 transition-all duration-500 hover:-translate-y-2 hover:border-purple-500/30 hover:shadow-[0_10px_40px_rgba(168,85,247,0.15)]">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/5 group-hover:via-purple-500/40 to-transparent transition-colors duration-500"></div>
-              <div className="text-purple-500/30 group-hover:text-purple-500 text-6xl font-serif absolute -top-2 left-6 transition-colors duration-500">"</div>
-              <p className="text-gray-300 relative z-10 mb-8 pt-4 leading-relaxed">
-                The level of research in these documentaries is unmatched. It completely changed how I view modern tech.
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-800 rounded-full border border-gray-700 group-hover:border-purple-500/50 transition-colors"></div>
-                <div>
-                  <div className="font-bold text-white group-hover:text-purple-300 transition-colors">Alex M.</div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-bold mt-0.5">Subscriber</div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="group relative bg-[#141414]/80 backdrop-blur-sm p-8 rounded-2xl border border-white/5 transition-all duration-500 hover:-translate-y-2 hover:border-purple-500/30 hover:shadow-[0_10px_40px_rgba(168,85,247,0.15)]">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/5 group-hover:via-purple-500/40 to-transparent transition-colors duration-500"></div>
-              <div className="text-purple-500/30 group-hover:text-purple-500 text-6xl font-serif absolute -top-2 left-6 transition-colors duration-500">"</div>
-              <p className="text-gray-300 relative z-10 mb-8 pt-4 leading-relaxed">
-                Finally, a platform that doesn't just scratch the surface. The 'Silicon Horizon' doc was mind-blowing.
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-800 rounded-full border border-gray-700 group-hover:border-purple-500/50 transition-colors"></div>
-                <div>
-                  <div className="font-bold text-white group-hover:text-purple-300 transition-colors">Sarah J.</div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-bold mt-0.5">Supporter</div>
-                </div>
-              </div>
-            </div>
+          <div className="absolute inset-y-0 left-0 w-16 md:w-48 bg-gradient-to-r from-[#0f0f0f] to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute inset-y-0 right-0 w-16 md:w-48 bg-gradient-to-l from-[#0f0f0f] to-transparent z-10 pointer-events-none"></div>
 
-            <div className="group relative bg-[#141414]/80 backdrop-blur-sm p-8 rounded-2xl border border-white/5 transition-all duration-500 hover:-translate-y-2 hover:border-purple-500/30 hover:shadow-[0_10px_40px_rgba(168,85,247,0.15)]">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/5 group-hover:via-purple-500/40 to-transparent transition-colors duration-500"></div>
-              <div className="text-purple-500/30 group-hover:text-purple-500 text-6xl font-serif absolute -top-2 left-6 transition-colors duration-500">"</div>
-              <p className="text-gray-300 relative z-10 mb-8 pt-4 leading-relaxed">
-                The production quality is insane for an independent creator. Keep bringing the truth to light.
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-800 rounded-full border border-gray-700 group-hover:border-purple-500/50 transition-colors"></div>
-                <div>
-                  <div className="font-bold text-white group-hover:text-purple-300 transition-colors">Marcus T.</div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-bold mt-0.5">Viewer</div>
+          {/* w-max forces the flex items onto one line for the marquee to slide */}
+          <div className="flex w-max animate-marquee gap-6 px-3">
+            {[...testimonials, ...testimonials].map((t, i) => (
+              
+              <div key={i} className="relative w-[320px] md:w-[420px] shrink-0 p-[2px] rounded-2xl group transition-all duration-500 ease-out hover:-translate-y-2 overflow-hidden">
+                
+                <div className="absolute inset-[-150%] z-0 opacity-100 bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_75%,#a855f7_100%)] [animation:spin_4s_linear_infinite]"></div>
+                
+                <div className="relative h-full bg-[#141414] backdrop-blur-sm p-8 rounded-[14px] border border-white/5 transition-colors duration-500 group-hover:bg-[#111] z-10 flex flex-col shadow-lg">
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/5 group-hover:via-purple-500/40 to-transparent transition-colors duration-500"></div>
+                  
+                  <div className="text-purple-500/30 group-hover:text-purple-500 text-6xl font-serif absolute -top-2 left-6 transition-colors duration-500">"</div>
+                  
+                  <p className="text-gray-300 relative z-10 mb-8 pt-4 leading-relaxed flex-grow whitespace-normal">
+                    {t.quote}
+                  </p>
+                  
+                  <div className="flex items-center gap-4 mt-auto">
+                    <div className="w-12 h-12 bg-gray-800 rounded-full border border-gray-700 group-hover:border-purple-500/50 transition-colors"></div>
+                    <div>
+                      <div className="font-bold text-white group-hover:text-purple-300 transition-colors">{t.author}</div>
+                      <div className="text-xs text-gray-500 uppercase tracking-wider font-bold mt-0.5">{t.role}</div>
+                    </div>
+                  </div>
                 </div>
+
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <Newsletter/>
+      <div className="relative z-20 pb-0">
+         <Newsletter/>
+      </div>
       
+      <section className="relative w-full h-[18vh] md:h-[26vh] bg-[#0a0a0a] z-0 pointer-events-auto overflow-hidden flex items-end">
+        <Watermark />
+      </section>
+
     </main>
   );
 }
