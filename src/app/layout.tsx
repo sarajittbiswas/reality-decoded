@@ -191,6 +191,8 @@ export default function RootLayout({
               { name: 'Field Reports', link: '/blogs' },
               { name: 'Video Intel', link: '/videos' },
               { name: 'Master Archives', link: '/archives' },
+              { name: 'Threat Matrix Monitor', link: '/monitor' },
+              { name: 'Investigative Methodology', link: '/methodology' },
             ].map((item) => (
               <li key={item.name}>
                 <a href={item.link} className="text-gray-400 hover:text-white flex items-center gap-3 group transition-all text-sm">
@@ -237,6 +239,7 @@ export default function RootLayout({
           { name: 'Privacy Policy', link: '/privacy' },
           { name: 'Disclaimer', link: '/disclaimer' },
           { name: 'Editorial Policy', link: '/editorial-policy' },
+          { name: 'Whistleblower Privilege', link: '/legal' },
         ].map((item) => (
           <li key={item.name}>
             <a href={item.link} className="text-gray-400 hover:text-white flex items-center gap-3 group transition-all text-sm">
@@ -304,6 +307,7 @@ export default function RootLayout({
           </a>
         </div>
       </div>
+
     </div>
 
   </div>
@@ -315,6 +319,20 @@ export default function RootLayout({
     </div>
     
     <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-[10px] text-gray-500 font-mono uppercase tracking-widest">
+      <div className="flex items-center gap-2">
+        <a 
+    href="/feed" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    className="group inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors duration-300 mt-1"
+  >
+    <svg className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12.75 19.5v-.75a7.5 7.5 0 00-7.5-7.5H4.5m0-6.75h.75c7.87 0 14.25 6.38 14.25 14.25v.75M6 18.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+    </svg>
+    <span>RSS & Open Data</span>
+  </a>
+      </div>
+      <span className="hidden md:inline text-gray-800">|</span>
       <div className="flex items-center gap-2">
         <span className="text-gray-600">SYS.UPTIME:</span>
         <span className="text-purple-400 font-bold">99.9%</span>

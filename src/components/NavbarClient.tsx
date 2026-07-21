@@ -15,7 +15,7 @@ export default function NavbarClient({ data }: { data: any }) {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   
   // Sub-tabs for dynamic left-hover content
-  const [intelTab, setIntelTab] = useState<'videos' | 'articles' | 'archives'>('videos');
+  const [intelTab, setIntelTab] = useState<'videos' | 'articles' | 'archives' | 'monitor'>('videos');
   const [syndicateTab, setSyndicateTab] = useState<'about' | 'team' | 'authors' | 'careers'>('about');
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -118,6 +118,13 @@ export default function NavbarClient({ data }: { data: any }) {
                   <Link href="/archives" onMouseEnter={() => setIntelTab('archives')} onClick={closeAll} className={`px-3 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors ${intelTab === 'archives' ? 'bg-white/10 text-white font-bold' : 'text-zinc-400 hover:text-white'}`}>
                     Archives <span>&rarr;</span>
                   </Link>
+                  <Link href="/monitor" onMouseEnter={() => setIntelTab('monitor')} onClick={closeAll} className={`px-3 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors ${intelTab === 'monitor' ? 'bg-white/10 text-white font-bold' : 'text-zinc-400 hover:text-white'}`}>
+  <span className="flex items-center gap-2">
+    <span className="w-1.5 h-1.5 rounded-full bg-red-500 group-hover:animate-pulse"></span>
+    Threat Matrix
+  </span>
+  <span>&rarr;</span>
+</Link>
                 </div>
 
                 <div className="w-2/3 relative z-10 flex flex-col justify-center p-2 min-h-[160px]">
@@ -139,6 +146,62 @@ export default function NavbarClient({ data }: { data: any }) {
                       <div className="grid grid-cols-2 gap-2">
                         {data.videos?.[0] && <NavCard href={`/watch/${data.videos[0].id}`} label="Video" title={data.videos[0].title} image={data.videos[0].image} />}
                         {data.articles?.[0] && <NavCard href={`/blogs/${data.articles[0].slug}`} label="Article" title={data.articles[0].title} image={data.articles[0].image} />}
+                      </div>
+                    </div>
+                  )}
+                  {intelTab === 'monitor' && (
+                    <div className="flex flex-col gap-2 animate-[fade-in-up_0.2s_ease-out]">
+                      <span className={`${jetBrainsMono.className} text-[9px] uppercase tracking-widest text-zinc-500 px-1 flex items-center gap-2`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                        Live System Telemetry
+                      </span>
+                      
+                      <div className="grid grid-cols-2 gap-3 h-[135px]">
+                        
+                        {/* CARD 1: DEFCON / THREAT STATUS */}
+                        <Link href="/monitor" onClick={closeAll} className="relative group block rounded-2xl overflow-hidden shadow-lg h-full hover:-translate-y-0.5 transition-transform duration-300">
+                          <div className="absolute inset-[-150%] z-0 opacity-40 group-hover:opacity-100 bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_75%,rgba(255,255,255,0.7)_100%)] animate-spin [animation-duration:5s] transition-opacity duration-500 pointer-events-none"></div>
+                          <div className="absolute inset-[1.5px] bg-[#111] rounded-[14.5px] z-10"></div>
+                          <div className="absolute inset-[1.5px] bg-white/[0.02] border border-white/5 group-hover:border-transparent rounded-[14.5px] z-10 transition-colors duration-500"></div>
+                          
+                          <div className="relative z-20 p-4 h-full flex flex-col justify-between">
+                            <div className="flex items-start justify-between">
+                              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-red-400 group-hover:bg-red-500/10 transition-colors">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                              </div>
+                              <span className={`${jetBrainsMono.className} text-[8px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest`}>Alert</span>
+                            </div>
+                            <div>
+                              <h4 className={`${spaceGrotesk.className} text-white font-bold text-sm mb-0.5`}>DEFCON 2</h4>
+                              <p className="text-[10px] text-zinc-400 font-light">Global Threat Active</p>
+                            </div>
+                          </div>
+                        </Link>
+
+                        {/* CARD 2: NETWORK / NODE HEALTH */}
+                        <Link href="/monitor" onClick={closeAll} className="relative group block rounded-2xl overflow-hidden shadow-lg h-full hover:-translate-y-0.5 transition-transform duration-300">
+                          <div className="absolute inset-[-150%] z-0 opacity-40 group-hover:opacity-100 bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_75%,rgba(255,255,255,0.7)_100%)] animate-spin [animation-duration:7s] transition-opacity duration-500 pointer-events-none"></div>
+                          <div className="absolute inset-[1.5px] bg-[#111] rounded-[14.5px] z-10"></div>
+                          <div className="absolute inset-[1.5px] bg-white/[0.02] border border-white/5 group-hover:border-transparent rounded-[14.5px] z-10 transition-colors duration-500"></div>
+                          
+                          <div className="relative z-20 p-4 h-full flex flex-col justify-between">
+                            <div className="flex items-start justify-between">
+                              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-emerald-400 group-hover:bg-emerald-500/10 transition-colors">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25z" />
+                                </svg>
+                              </div>
+                              <span className={`${jetBrainsMono.className} text-[8px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest`}>Online</span>
+                            </div>
+                            <div>
+                              <h4 className={`${spaceGrotesk.className} text-white font-bold text-sm mb-0.5`}>Node Health</h4>
+                              <p className="text-[10px] text-zinc-400 font-light">Zero Packet Leakage</p>
+                            </div>
+                          </div>
+                        </Link>
+
                       </div>
                     </div>
                   )}
@@ -296,6 +359,7 @@ export default function NavbarClient({ data }: { data: any }) {
                 <Link href="/videos" onClick={closeAll} className="py-3 text-lg font-medium text-zinc-300">All Videos &rarr;</Link>
                 <Link href="/blogs" onClick={closeAll} className="py-3 text-lg font-medium text-zinc-300">All Articles &rarr;</Link>
                 <Link href="/archives" onClick={closeAll} className="py-3 text-lg font-medium text-zinc-300">Master Archives &rarr;</Link>
+                <Link href="/monitor" onClick={closeAll} className="py-3 text-lg font-medium text-zinc-300">Threat Matrix &rarr;</Link>
               </div>
             </div>
           )}
