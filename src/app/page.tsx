@@ -4,6 +4,7 @@ import { Space_Grotesk } from 'next/font/google';
 import Newsletter from '@/components/Newsletter';
 import StatCounter from '@/components/StatCounter';
 import Watermark from '@/components/Watermark';
+import InvestigationsTicker from '@/components/InvestigationsTicker';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
@@ -139,7 +140,7 @@ export default async function Home() {
           </div>
         </div>
       </section>
-
+<InvestigationsTicker />
       {/* 2. SYNDICATE REACH */}
       <section className="relative z-20 py-16 bg-[#050505] border-y border-white/5">
         <div className="max-w-7xl mx-auto px-6">
@@ -242,6 +243,7 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      
 
       {/* THE MISSION */}
       <section className="bg-[#111] py-32 border-y border-white/5 relative overflow-hidden">
