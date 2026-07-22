@@ -34,7 +34,7 @@ const shareOptions = [
     hoverStyle: 'hover:border-[#FF4500] hover:shadow-[0_0_15px_rgba(255,69,0,0.3)] hover:bg-[#FF4500]/10',
     textHover: 'group-hover/btn:text-[#FF4500]',
     iconFill: 'fill-gray-400 group-hover/btn:fill-[#FF4500]',
-    icon: <svg className="w-5 h-5 transition-colors" viewBox="0 0 24 24"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.249 0 .688.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-2.752 4.122c-1.631 0-2.316.892-2.336.923a.346.346 0 0 0 .193.535.343.343 0 0 0 .524-.193c.01-.01.523-.559 1.619-.559 1.096 0 1.609.549 1.619.559a.344.344 0 0 0 .524.193.346.346 0 0 0 .193-.535c-.02-.031-.705-.923-2.336-.923z"/></svg>
+    icon: <svg className="w-5 h-5 transition-colors" viewBox="0 0 24 24"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-2.752 4.122c-1.631 0-2.316.892-2.336.923a.346.346 0 0 0 .193.535.343.343 0 0 0 .524-.193c.01-.01.523-.559 1.619-.559 1.096 0 1.609.549 1.619.559a.344.344 0 0 0 .524.193.346.346 0 0 0 .193-.535c-.02-.031-.705-.923-2.336-.923z"/></svg>
   },
   {
     id: 'facebook',
@@ -73,6 +73,17 @@ export default function Interactions({ id, title }: InteractionsProps) {
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSyncing, setIsSyncing] = useState(true);
+
+  // Toast State for Success Notifications
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Helper to trigger floating toast message
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
 
   // 1. Fetch Global Data on Load
   useEffect(() => {
@@ -143,10 +154,10 @@ export default function Interactions({ id, title }: InteractionsProps) {
       window.open(`https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`, '_blank');
     } else if (platform === 'instagram') {
       navigator.clipboard.writeText(url);
-      alert("Intelligence link copied! Paste it into your Instagram Story or Bio.");
+      triggerToast("Intelligence link copied! Paste it into your Instagram Story or Bio.");
     } else if (platform === 'copy') {
       navigator.clipboard.writeText(url);
-      alert("Secure link copied to clipboard.");
+      triggerToast("Secure link copied to clipboard.");
     }
   };
 
@@ -171,8 +182,18 @@ export default function Interactions({ id, title }: InteractionsProps) {
   }
 
   return (
-    <div className="mt-12 border-t border-white/10 pt-8">
+    <div className="mt-12 border-t border-white/10 pt-8 relative">
       
+      {/* Sleek Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-8 right-8 z-50 bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/20 text-white px-5 py-3 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span className={`${spaceGrotesk.className} text-xs tracking-wider font-bold`}>{toastMessage}</span>
+        </div>
+      )}
+
       {/* ACTION BAR (Like & Share) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-12 relative">
         
@@ -201,7 +222,7 @@ export default function Interactions({ id, title }: InteractionsProps) {
             onClick={() => setShowShareMenu(!showShareMenu)}
             className="flex items-center justify-center sm:justify-start gap-3 px-5 py-3 rounded-full bg-[#111] border border-white/10 text-gray-400 hover:border-purple-500/50 hover:text-purple-400 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all duration-300 w-full sm:w-auto"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-5.368m0 5.368l5.628 3.376c.19.114.417.172.656.172a3 3 0 100-5.368c-.239 0-.466.058-.656.172l-5.628 3.376a3 3 0 110-5.368l5.628-3.376c.19-.114.417-.172.656-.172a3 3 0 100 5.368c-.239 0-.466-.058-.656-.172m-5.628 3.376a3 3 0 110-5.368m0 5.368a3 3 0 110 5.368"></path></svg>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-5.368m0 5.368l5.628 3.376c.19.114.417.172.656.172a3 3 0 100-5.368c-.239 0-.466.058-.656.172l-5.628 3.376a3 3 0 110-5.368l5.628-3.376c.19-.114.417-.172.656-.172a3 3 0 100 5.368c-.239 0-.466.058-.656.172m-5.628 3.376a3 3 0 110-5.368m0 5.368a3 3 0 110 5.368"></path></svg>
             <span className={`${spaceGrotesk.className} font-bold tracking-wide`}>{shares} Transmissions</span>
           </button>
 

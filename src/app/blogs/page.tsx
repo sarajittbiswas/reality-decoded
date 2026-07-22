@@ -2,6 +2,8 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 import Link from 'next/link';
 import { Space_Grotesk, Inter } from 'next/font/google';
 import AuthorHoverCard from '@/components/AuthorHoverCard';
+// 🚀 ADDED: Import the new popover component
+import SubscribePopover from '@/components/SubscribePopover';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 const inter = Inter({ subsets: ['latin'] });
@@ -72,18 +74,23 @@ export default async function PublicBlogFeed(props: {
       
       <div className="max-w-6xl mx-auto relative z-10">
         
-        {/* Editorial Header (Left Aligned matching screenshot) */}
-        <header className="mb-10 pt-4">
-          <h1 className={`${spaceGrotesk.className} text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight`}>
-            Decoded Intel
-          </h1>
+        {/* Editorial Header - Aligned on the exact same horizontal line */}
+        <header className="mb-10 pt-4 relative z-50">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <h1 className={`${spaceGrotesk.className} text-4xl sm:text-5xl md:text-7xl font-bold text-white tracking-tight`}>
+              Decoded Intel
+            </h1>
+            <div className="flex-shrink-0">
+              <SubscribePopover />
+            </div>
+          </div>
           <p className="text-zinc-500 text-sm md:text-base font-light tracking-wide max-w-2xl">
             Verified field reports, investigations, and classified operations logs.
           </p>
         </header>
 
         {/* Dynamic Category Pill Navigation */}
-        <div className="flex flex-wrap items-center gap-2.5 mb-12 pb-4 border-b border-white/5">
+        <div className="flex flex-wrap items-center gap-2.5 mb-12 pb-4 border-b border-white/5 relative z-10">
           <Link 
             href="/blogs"
             className={`px-5 py-2 rounded-full text-xs md:text-sm font-medium tracking-wide transition-all duration-300 ${
@@ -111,7 +118,7 @@ export default async function PublicBlogFeed(props: {
         </div>
 
         {/* Articles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
           {displayedArticles.length === 0 ? (
             <div className="col-span-full border border-white/10 p-16 text-center rounded-[2rem] text-zinc-500 font-medium tracking-widest text-sm bg-white/[0.02] backdrop-blur-xl flex flex-col items-center">
                <svg className="w-12 h-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>

@@ -14,10 +14,21 @@ const getISTDate = (dateStr: string) => {
   return new Date(dateStr.replace(' ', 'T') + '+05:30');
 };
 
-export default async function TagArchivePage({ params }: { params: Promise<{ tag: string }> }) {
-   const { tag } = await params;
-   const decodedTag = decodeURIComponent(tag).replace(/^_/, '').trim();
-   const db = (getRequestContext().env as any).reality_decoded_db;
+export default async function TagArchivePage({ 
+  params,
+  searchParams 
+}: { 
+  params: Promise<{ tag: string }>;
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { tag } = await params;
+  
+  // Read the query parameter to see which blog the user came from
+  const resolvedSearchParams = await searchParams;
+  const fromSlug = resolvedSearchParams?.from;
+
+  const decodedTag = decodeURIComponent(tag).replace(/^_/, '').trim();
+  const db = (getRequestContext().env as any).reality_decoded_db;
   
   const searchQuery = decodedTag.toLowerCase();
   const likeQuery = `%,${searchQuery},%`;
@@ -45,7 +56,7 @@ export default async function TagArchivePage({ params }: { params: Promise<{ tag
   );
 
   return (
-    <main className={`w-full bg-[#050505] text-zinc-300 min-h-screen relative overflow-hidden pt-40 pb-32 ${inter.className}`}>
+    <main className={`w-full bg-[#050505] text-zinc-300 min-h-screen relative overflow-hidden pt-32 pb-32 ${inter.className}`}>
       
       {/* GLOBAL BACKGROUND ELEMENTS */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] opacity-[0.25] pointer-events-none z-0"></div>
@@ -53,6 +64,25 @@ export default async function TagArchivePage({ params }: { params: Promise<{ tag
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
+        {/* 🚀 UPGRADED: Breadcrumbs matching the blogs/[slug] minimal UI */}
+        <div className={`flex flex-wrap items-center gap-3 text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-medium mb-12 ${jetBrainsMono.className}`}>
+          <Link href="/" className="hover:text-white transition-colors">MAINFRAME</Link>
+          <span className="text-zinc-700">/</span>
+          <Link href="/blogs" className="hover:text-white transition-colors">ARCHIVES</Link>
+          
+          {fromSlug && (
+            <>
+              <span className="text-zinc-700">/</span>
+              <Link href={`/blogs/${fromSlug}`} className="hover:text-white transition-colors truncate max-w-[150px] md:max-w-[300px]" title={fromSlug}>
+                REF: {fromSlug.replace(/-/g, ' ')}
+              </Link>
+            </>
+          )}
+
+          <span className="text-zinc-700">/</span>
+          <span className="text-zinc-300">TAG: {decodedTag}</span>
+        </div>
+
         {/* Header */}
         <div className="mb-16 border-b border-white/5 pb-10">
           <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-white/5 text-zinc-300 text-[10px] font-bold uppercase tracking-widest mb-6 ${jetBrainsMono.className}`}>
@@ -62,7 +92,7 @@ export default async function TagArchivePage({ params }: { params: Promise<{ tag
             </span>
             Archive Database Query
           </div>
-          <h1 className={`${spaceGrotesk.className} text-5xl md:text-6xl font-extrabold tracking-tight mb-4 uppercase text-white`}>
+          <h1 className={`${spaceGrotesk.className} text-4xl md:text-6xl font-extrabold tracking-tight mb-4 uppercase text-white`}>
             Tag: <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-200 to-zinc-500">{decodedTag}</span>
           </h1>
           <p className="text-zinc-500 font-light tracking-wide">
@@ -73,9 +103,13 @@ export default async function TagArchivePage({ params }: { params: Promise<{ tag
         {/* Results Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {articles.length === 0 ? (
-            <div className="col-span-full border border-white/10 p-16 text-center rounded-[2rem] text-zinc-500 font-medium tracking-widest text-sm bg-white/[0.02] backdrop-blur-xl flex flex-col items-center">
-              <svg className="w-12 h-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
-              NO TRANSMISSIONS FOUND FOR THIS PARAMETER.
+            <div className="col-span-full border border-white/10 p-16 text-center rounded-[2rem] text-zinc-500 font-medium tracking-widest text-sm bg-[#0a0a0a] flex flex-col items-center relative overflow-hidden group">
+              <div className="absolute inset-[-150%] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_75%,rgba(255,255,255,0.1)_100%)] animate-[spin_6s_linear_infinite] z-0 pointer-events-none"></div>
+              <div className="absolute inset-[1px] bg-[#0a0a0a] rounded-[31px] z-10"></div>
+              <div className="relative z-20 flex flex-col items-center">
+                <svg className="w-12 h-12 mb-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+                <span className={`${jetBrainsMono.className} text-xs`}>NO TRANSMISSIONS FOUND FOR THIS PARAMETER.</span>
+              </div>
             </div>
           ) : (
             articles.map((article: any) => {
@@ -90,18 +124,14 @@ export default async function TagArchivePage({ params }: { params: Promise<{ tag
               return (
                 <Link href={`/blogs/${article.slug}`} key={article.id} className="relative group block h-full flex flex-col hover:z-50 hover:-translate-y-1 transition-transform duration-500">
                   
-                  {/* LAYER 1: BACKGROUND BEAM (Optimized for performance) */}
+                  {/* BACKGROUND BEAM */}
                   <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-lg group-hover:shadow-[0_15px_40px_rgba(0,0,0,0.5)] transition-shadow duration-500 pointer-events-none">
-                    
-                    {/* 🚨 FIX: Added transform-gpu and will-change-transform for hardware acceleration */}
-                    <div className="absolute inset-[-150%] z-0 opacity-40 group-hover:opacity-90 bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_75%,rgba(255,255,255,0.5)_100%)] [animation:spin_6s_linear_infinite] transition-opacity duration-500 transform-gpu will-change-transform"></div>
-                    
-                    {/* 🚨 FIX: Removed the expensive backdrop-blur-2xl filter from the solid layer */}
+                    <div className="absolute inset-[-150%] z-0 opacity-40 group-hover:opacity-100 bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_75%,rgba(255,255,255,0.6)_100%)] animate-[spin_4s_linear_infinite] transition-opacity duration-500 transform-gpu will-change-transform"></div>
                     <div className="absolute inset-[1.5px] bg-[#050505] rounded-[22.5px] z-10"></div>
-                    <div className="absolute inset-[1.5px] bg-white/[0.02] border border-white/5 group-hover:border-transparent rounded-[22.5px] z-10 transition-colors duration-500"></div>
+                    <div className="absolute inset-[1.5px] bg-white/[0.02] border border-white/5 group-hover:border-white/10 rounded-[22.5px] z-10 transition-colors duration-500"></div>
                   </div>
 
-                  {/* LAYER 2: FOREGROUND CONTENT (overflow-visible) */}
+                  {/* FOREGROUND CONTENT */}
                   <div className="relative p-8 flex flex-col h-full z-20">
                     
                     <div className="absolute inset-x-8 top-[1.5px] h-px bg-gradient-to-r from-transparent via-white/10 group-hover:via-white/40 to-transparent transition-colors duration-500"></div>
@@ -121,7 +151,7 @@ export default async function TagArchivePage({ params }: { params: Promise<{ tag
                     
                     <div className="flex flex-wrap gap-2 mt-2 mb-6">
                       {(article.tags || '').split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string, i: number) => (
-                        <span key={i} className={`${jetBrainsMono.className} text-[9px] uppercase tracking-widest border border-white/5 bg-white/[0.02] px-2.5 py-1 rounded-sm text-zinc-500 group-hover:border-white/10 group-hover:text-zinc-300 transition-colors`}>
+                        <span key={i} className={`${jetBrainsMono.className} text-[9px] uppercase tracking-widest border border-white/5 bg-[#0a0a0a] px-2.5 py-1 rounded-sm text-zinc-500 group-hover:border-white/10 group-hover:text-zinc-300 transition-colors`}>
                           {t}
                         </span>
                       ))}
