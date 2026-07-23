@@ -2,220 +2,423 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'] });
 const jetBrainsMono = JetBrains_Mono({ subsets: ['latin'] });
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 // ---------------------------------------------------------
-// 1. HILARIOUS SYNDICATE ERROR JOKES
+// 1. 15 HILARIOUS JOKES & UNIQUE ANIMATED CARTOONS
 // ---------------------------------------------------------
-const QUOTES = [
-  // ALIEN / SPACE
-  { type: 'alien', text: "You've wandered off the grid. This page is currently orbiting Kepler-452b." },
-  { type: 'alien', text: "Error 404: The Zeta Reticulans abducted this report. We are negotiating its release." },
-  { type: 'alien', text: "Transmission intercepted by Martian outposts. Please try a more terrestrial link." },
-  { type: 'alien', text: "This URL exists in a parallel universe. Unfortunately, you are stuck in this one." },
-  
-  // CORRUPTION / SERVER
-  { type: 'server', text: "Systemic corruption doesn't just ruin infrastructure, it ruined this server too." },
-  { type: 'server', text: "A shadow lobbyist bribed our database to hide this page. We're as annoyed as you are." },
-  { type: 'server', text: "Our servers tripped over a classified wire. This URL has been permanently redacted." },
-  { type: 'server', text: "The oligarchy bought this link and privatized the content. You can't afford to see it." },
-  
-  // MATRIX / SIMULATION
-  { type: 'matrix', text: "Simulation boundary reached. The alien developers forgot to render this sector." },
-  { type: 'matrix', text: "Congratulations, you found a glitch in the matrix. Please stand by for a memory wipe." },
-  { type: 'matrix', text: "Reality engine failed to load. We are out of RAM and existential dread." },
-  { type: 'matrix', text: "You've clipped through the backrooms of the internet. Don't look behind you." },
-  
-  // SARCASTIC
-  { type: 'sarcastic', text: "We searched everywhere. Under the couch, in the cloud, behind the firewall. It's gone." },
-  { type: 'sarcastic', text: "This link is exactly as broken as the modern political system." },
-  { type: 'sarcastic', text: "You clicked a link that doesn't exist. We judge you silently, but respectfully." }
+const JOKES_DB = [
+  // --- ALIEN THEME ---
+  {
+    text: "You've wandered off the grid. This page is currently orbiting Kepler-452b. We'll send a rover to check on it.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100">
+        <g className="animate-float">
+          <ellipse cx="50" cy="40" rx="30" ry="10" fill="currentColor" opacity="0.8" />
+          <path d="M 30 35 C 30 15, 70 15, 70 35" fill="none" stroke="currentColor" strokeWidth="3" />
+          <circle cx="50" cy="25" r="5" fill="#a855f7" className="animate-pulse" />
+        </g>
+        <polygon points="40,45 60,45 80,90 20,90" fill="url(#beam-gradient)" opacity="0.3" className="animate-pulse" />
+        <defs><linearGradient id="beam-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a855f7" /><stop offset="100%" stopColor="transparent" /></linearGradient></defs>
+      </svg>
+    )
+  },
+  {
+    text: "Error 404: The Zeta Reticulans abducted this report. We are currently negotiating its release.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-wiggle" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <path d="M 50 20 C 20 20, 10 50, 25 75 C 35 90, 65 90, 75 75 C 90 50, 80 20, 50 20 Z" />
+        <ellipse cx="35" cy="50" rx="8" ry="12" fill="#000" stroke="none" transform="rotate(-20 35 50)" />
+        <ellipse cx="65" cy="50" rx="8" ry="12" fill="#000" stroke="none" transform="rotate(20 65 50)" />
+        <line x1="45" y1="80" x2="55" y2="80" />
+      </svg>
+    )
+  },
+  {
+    text: "Transmission intercepted by Martian outposts. Please try a more terrestrial, earth-bound link.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <path d="M 50 90 L 50 40 M 30 90 L 50 40 M 70 90 L 50 40" />
+        <path d="M 20 40 C 40 20, 60 20, 80 40" className="animate-radar" />
+        <circle cx="50" cy="40" r="4" fill="currentColor" />
+      </svg>
+    )
+  },
+  {
+    text: "This URL exists in a parallel dimension. Unfortunately, your router is stuck in this one.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-spin-slow" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="50" cy="50" r="10" />
+        <circle cx="50" cy="50" r="20" strokeDasharray="5,5" />
+        <circle cx="50" cy="50" r="30" strokeDasharray="10,10" />
+        <circle cx="50" cy="50" r="40" strokeDasharray="20,20" />
+      </svg>
+    )
+  },
+
+  // --- SERVER / CORRUPTION THEME ---
+  {
+    text: "Systemic corruption doesn't just ruin infrastructure, it ruined this server block too.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <rect x="20" y="20" width="60" height="60" rx="4" />
+        <line x1="20" y1="40" x2="80" y2="40" />
+        <line x1="20" y1="60" x2="80" y2="60" />
+        <path d="M 40 40 L 45 30 L 55 50 L 60 40" className="animate-pulse" stroke="#ef4444" strokeWidth="4" />
+        <circle cx="30" cy="30" r="2" fill="currentColor" />
+        <circle cx="30" cy="50" r="2" fill="currentColor" />
+        <circle cx="30" cy="70" r="2" fill="currentColor" />
+      </svg>
+    )
+  },
+  {
+    text: "A shadow lobbyist bribed our database to hide this page. We're honestly as annoyed as you are.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-float" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <rect x="25" y="45" width="50" height="40" rx="4" />
+        <path d="M 40 45 V 35 C 40 25, 60 25, 60 35 V 45" />
+        <circle cx="50" cy="60" r="4" />
+        <line x1="50" y1="64" x2="50" y2="72" />
+      </svg>
+    )
+  },
+  {
+    text: "Our servers tripped over a classified wire. This URL has been permanently redacted by higher-ups.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <path d="M 20 80 L 80 80 M 50 80 L 50 20 M 30 20 L 70 20" />
+        <path d="M 40 50 C 45 40, 55 60, 60 50" stroke="#ef4444" strokeWidth="4" className="animate-glitch" />
+      </svg>
+    )
+  },
+  {
+    text: "The oligarchy bought this link and privatized the content. You can't afford the subscription to see it.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-wiggle" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <circle cx="50" cy="50" r="30" />
+        <path d="M 50 30 L 50 70 M 40 40 H 60 M 40 60 H 60" stroke="#22c55e" />
+      </svg>
+    )
+  },
+
+  // --- MATRIX / SIMULATION THEME ---
+  {
+    text: "Simulation boundary reached. The alien developers clearly forgot to render this specific sector.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M 10 50 Q 50 10 90 50 Q 50 90 10 50" />
+        <circle cx="50" cy="50" r="15" className="animate-spin-slow" strokeDasharray="4 4" />
+        <circle cx="50" cy="50" r="5" fill="#a855f7" />
+      </svg>
+    )
+  },
+  {
+    text: "Congratulations, you found a glitch in the matrix. Please stay exactly where you are for a memory wipe.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-glitch" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <rect x="20" y="20" width="60" height="60" />
+        <text x="30" y="55" fontSize="24" fontFamily="monospace" fill="currentColor" stroke="none">404</text>
+        <line x1="10" y1="40" x2="90" y2="40" stroke="#a855f7" className="animate-scan" />
+      </svg>
+    )
+  },
+  {
+    text: "Reality engine failed to load. We are completely out of RAM and existential dread.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-pulse" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <rect x="30" y="20" width="40" height="60" rx="5" />
+        <rect x="35" y="25" width="30" height="15" fill="#ef4444" stroke="none" />
+        <line x1="40" y1="80" x2="40" y2="90" />
+        <line x1="50" y1="80" x2="50" y2="90" />
+        <line x1="60" y1="80" x2="60" y2="90" />
+      </svg>
+    )
+  },
+  {
+    text: "You've clipped through the backrooms of the internet. We highly recommend you don't look behind you.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <rect x="10" y="10" width="80" height="80" />
+        <line x1="10" y1="10" x2="40" y2="40" />
+        <line x1="90" y1="10" x2="60" y2="40" />
+        <line x1="10" y1="90" x2="40" y2="60" />
+        <line x1="90" y1="90" x2="60" y2="60" />
+        <rect x="40" y="40" width="20" height="20" className="animate-spin-slow" />
+      </svg>
+    )
+  },
+
+  // --- SARCASM THEME ---
+  {
+    text: "We searched everywhere. Under the couch, in the cloud, behind the firewall. It's totally gone.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-radar" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <circle cx="45" cy="45" r="20" />
+        <line x1="60" y1="60" x2="80" y2="80" strokeWidth="5" />
+      </svg>
+    )
+  },
+  {
+    text: "This link is exactly as broken as the modern political system. Make of that what you will.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-wiggle" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <path d="M 20 50 C 35 20, 65 20, 80 50 C 65 80, 35 80, 20 50 Z" strokeDasharray="10 5" />
+        <line x1="20" y1="20" x2="80" y2="80" stroke="#ef4444" />
+      </svg>
+    )
+  },
+  {
+    text: "You clicked a link that literally doesn't exist. We are judging you silently, but respectfully.",
+    icon: (
+      <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-float" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
+        <circle cx="50" cy="50" r="40" />
+        <line x1="35" y1="40" x2="45" y2="40" />
+        <line x1="55" y1="40" x2="65" y2="40" />
+        <line x1="40" y1="65" x2="60" y2="65" />
+      </svg>
+    )
+  }
 ];
 
 // ---------------------------------------------------------
-// 2. THE SVG UI GRID BLUEPRINT
+// 2. THE SVG GRID MAP (5x5 Font Coordinates)
 // ---------------------------------------------------------
-// This ASCII map is precisely parsed to build the text out of UI blocks.
-const GRID_PATTERN = `
-      #   #  ###  #   #
-      #   # #   # #   #
-      #   # #   # #   #
-      ##### #   # #####
-          # #   #     #
-          #  ###      #
+// Standard 5x5 pixel font layout to spell "404", "REALITY", "DECODED"
+const CHAR_MAP: Record<string, string[]> = {
+  '4': ["#...#", "#...#", "#####", "....#", "....#"],
+  '0': [".###.", "#...#", "#...#", "#...#", ".###."],
+  'R': ["####.", "#...#", "####.", "#..#.", "#...#"],
+  'E': ["#####", "#....", "####.", "#....", "#####"],
+  'A': [".###.", "#...#", "#####", "#...#", "#...#"],
+  'L': ["#....", "#....", "#....", "#....", "#####"],
+  'I': ["#####", "..#..", "..#..", "..#..", "#####"],
+  'T': ["#####", "..#..", "..#..", "..#..", "..#.."],
+  'Y': ["#...#", ".#.#.", "..#..", "..#..", "..#.."],
+  'D': ["####.", "#...#", "#...#", "#...#", "####."],
+  'C': [".###.", "#...#", "#....", "#...#", ".###."],
+  'O': [".###.", "#...#", "#...#", "#...#", ".###."]
+};
 
-### ####  ##  #   ### ### # #
-# # #    #  # #    #   #  # #
-##  ###  #### #    #   #   # 
-# # #    #  # #    #   #   # 
-# # #### #  # #### ###  #   #
+const buildCoordinates = () => {
+  const coords: { x: number, y: number }[] = [];
+  
+  const addWord = (word: string, startX: number, startY: number) => {
+    let currX = startX;
+    for (const char of word) {
+      const pattern = CHAR_MAP[char];
+      if (pattern) {
+        for (let r = 0; r < 5; r++) {
+          for (let c = 0; c < 5; c++) {
+            if (pattern[r][c] === '#') {
+              coords.push({ x: currX + c, y: startY + r });
+            }
+          }
+        }
+      }
+      currX += 6; // 5 wide + 1 space
+    }
+  };
 
-### ####  ##   ##  ### #### ###
-# # #    #  # #  # # # #    # #
-# # ###  #    #  # # # ###  # #
-# # #    #  # #  # # # #    # #
-### ####  ##   ##  ### #### ###
-`;
+  // Center alignment logic for a 41-column max width grid
+  // 404 is 3 chars = 17 cols wide. Starts at (41 - 17)/2 = 12
+  addWord("404", 12, 0);
+  // REALITY is 7 chars = 41 cols wide. Starts at 0.
+  addWord("REALITY", 0, 7);
+  // DECODED is 7 chars = 41 cols wide. Starts at 0.
+  addWord("DECODED", 0, 14);
 
-// ---------------------------------------------------------
-// 3. DYNAMIC CARTOON ICONS
-// ---------------------------------------------------------
-const JokeIcon = ({ type }: { type: string }) => {
-  switch (type) {
-    case 'alien':
-      // UFO Abduction
-      return (
-        <svg className="w-16 h-16 text-zinc-400 mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-        </svg>
-      );
-    case 'server':
-      // Broken Server Rack
-      return (
-        <svg className="w-16 h-16 text-zinc-400 mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01M12 16v-4m0 0l-2-2m2 2l2-2" />
-        </svg>
-      );
-    case 'matrix':
-      // Glitch / Eye
-      return (
-        <svg className="w-16 h-16 text-zinc-400 mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4l16 16" />
-        </svg>
-      );
-    default:
-      // Sarcastic Search
-      return (
-        <svg className="w-16 h-16 text-zinc-400 mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM9.5 9.5l5 5m0-5l-5 5" />
-        </svg>
-      );
-  }
+  return coords;
 };
 
 // ---------------------------------------------------------
-// 4. MAIN 404 EXPERIENCE
+// 3. MAIN PAGE
 // ---------------------------------------------------------
 export default function NotFound() {
-  const [hue, setHue] = useState(140); // Default to a Syndicate Green
-  const [joke, setJoke] = useState(QUOTES[0]);
+  const [hue, setHue] = useState(140);
+  const [jokeIndex, setJokeIndex] = useState<number | null>(null);
 
-  // Select a random joke on client mount
+  // Initialize Joke (No Repeats Logic)
   useEffect(() => {
-    setJoke(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+    let seen = JSON.parse(sessionStorage.getItem('seen404Jokes') || '[]');
+    if (seen.length >= JOKES_DB.length) {
+      seen = []; // Reset when all are seen
+    }
+    const unseenIndices = JOKES_DB.map((_, i) => i).filter(i => !seen.includes(i));
+    const randomIdx = unseenIndices[Math.floor(Math.random() * unseenIndices.length)];
+    
+    setJokeIndex(randomIdx);
+    sessionStorage.setItem('seen404Jokes', JSON.stringify([...seen, randomIdx]));
   }, []);
 
-  // Parse the ASCII grid into an array of SVG coordinates and UI properties
+  // Generate the miniature SVGs once
   const svgBlocks = useMemo(() => {
-    const blocks: any[] = [];
-    const lines = GRID_PATTERN.split('\n').filter(line => line.length > 0);
-    
-    lines.forEach((line, y) => {
-      for (let x = 0; x < line.length; x++) {
-        if (line[x] === '#') {
-          blocks.push({
-            id: `${x}-${y}`,
-            x,
-            y,
-            uiType: Math.floor(Math.random() * 4) + 1, // 4 different mini UI designs
-            hueOffset: Math.floor(Math.random() * 40) - 20, // Color texture variance
-            lightness: Math.floor(Math.random() * 30) + 40, // 40% to 70% brightness
-          });
-        }
-      }
-    });
-    return blocks;
+    const coords = buildCoordinates();
+    return coords.map((c, i) => ({
+      id: i,
+      x: c.x,
+      y: c.y,
+      baseUiType: Math.floor(Math.random() * 8), // 8 different mini UI designs!
+      hueOffset: Math.floor(Math.random() * 40) - 20,
+      lightness: Math.floor(Math.random() * 30) + 40,
+    }));
   }, []);
+
+  if (jokeIndex === null) return null; // Wait for hydration
+  const joke = JOKES_DB[jokeIndex];
 
   return (
     <main className={`min-h-screen bg-[#050505] text-zinc-300 flex flex-col items-center justify-center relative overflow-x-hidden ${inter.className}`}>
       
-      {/* Background Deep Grid */}
+      {/* Background Grid */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] opacity-[0.3] pointer-events-none z-0"></div>
 
-      <div className="relative z-10 w-full max-w-5xl px-6 flex flex-col items-center pt-24 pb-12">
+      {/* Global CSS for Cartoons & Slider */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        @keyframes wiggle { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+        .animate-wiggle { animation: wiggle 2s ease-in-out infinite; }
+        
+        @keyframes radar { 0% { opacity: 1; transform: scale(0.8); } 100% { opacity: 0; transform: scale(1.5); } }
+        .animate-radar { animation: radar 2s infinite; transform-origin: center; }
+        
+        @keyframes glitch { 0% { transform: translate(0); } 20% { transform: translate(-2px, 2px); } 40% { transform: translate(-2px, -2px); } 60% { transform: translate(2px, 2px); } 80% { transform: translate(2px, -2px); } 100% { transform: translate(0); } }
+        .animate-glitch { animation: glitch 0.5s infinite; }
+        
+        @keyframes scan { 0% { transform: translateY(-10px); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(30px); opacity: 0; } }
+        .animate-scan { animation: scan 2s linear infinite; }
+        
+        .animate-spin-slow { animation: spin 8s linear infinite; }
+
+        input[type=range]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          height: 28px;
+          width: 28px;
+          border-radius: 50%;
+          background: #fff;
+          border: 4px solid #000;
+          cursor: pointer;
+          box-shadow: 0 0 20px hsl(${hue}, 100%, 50%);
+          transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+          transform: scale(1.15);
+        }
+      `}} />
+
+      <div className="relative z-10 w-full max-w-5xl px-4 flex flex-col items-center pt-24 pb-12">
         
         {/* HEADER BADGE */}
-        <div className={`${jetBrainsMono.className} inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-widest mb-12 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]`}>
+        <div className={`${jetBrainsMono.className} inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-widest mb-10 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]`}>
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
           Decoded Archives // Error 404
         </div>
 
         {/* ---------------------------------------------------------
-            THE "404 REALITY DECODED" SVG ENGINE
+            THE "404 REALITY DECODED" MINIATURE SVG ENGINE
         --------------------------------------------------------- */}
-        {/* The viewBox is 29 columns wide by 18 rows high. 
-            Multiplying by 20px cell size = 580x360. 
-            This ensures it perfectly scales on mobile without breaking. */}
-        <div className="w-full max-w-2xl mb-16 px-2">
-          <svg viewBox="0 0 580 360" className="w-full h-auto drop-shadow-2xl overflow-visible">
-            
+        {/* Width 41 cols * 24px = 984. Height 19 rows * 24px = 456. Perfect ratio for scaling */}
+        <div className="w-full max-w-4xl mb-12">
+          <svg viewBox="0 0 984 456" className="w-full h-auto drop-shadow-2xl overflow-visible">
             <g>
               {svgBlocks.map((b) => {
-                const cellSize = 20;
+                const cellSize = 24;
                 const gap = 2;
-                const size = cellSize - gap;
+                const actualSize = cellSize - gap;
                 const posX = b.x * cellSize;
                 const posY = b.y * cellSize;
                 
-                // Dynamic colors bound to the interactive slider
+                // Shuffle logic! The type changes dynamically as you slide the hue!
+                const activeUiType = (b.baseUiType + Math.floor(hue / 30)) % 8;
+
                 const baseColor = `hsl(${hue + b.hueOffset}, 80%, ${b.lightness}%)`;
-                const darkAccent = `hsl(${hue + b.hueOffset}, 80%, ${b.lightness - 20}%)`;
+                const darkAccent = `hsl(${hue + b.hueOffset}, 80%, ${b.lightness - 25}%)`;
                 const lightAccent = `hsl(${hue + b.hueOffset}, 80%, ${b.lightness + 25}%)`;
 
                 return (
                   <g key={b.id} transform={`translate(${posX}, ${posY})`} className="transition-all duration-300 ease-out">
                     
                     {/* The Base Card Block */}
-                    <rect 
-                      width={size} 
-                      height={size} 
-                      rx="3" 
-                      fill={baseColor} 
-                      className="transition-colors duration-300 ease-out"
-                    />
+                    <rect width={actualSize} height={actualSize} rx="2" fill={baseColor} className="transition-colors duration-300 ease-out" />
 
-                    {/* MINI UI TYPE 1: Bar Graph */}
-                    {b.uiType === 1 && (
-                      <g>
-                        <rect x={size*0.2} y={size*0.4} width={size*0.15} height={size*0.4} rx="1" fill={darkAccent} />
-                        <rect x={size*0.45} y={size*0.2} width={size*0.15} height={size*0.6} rx="1" fill={darkAccent} />
-                        <rect x={size*0.7} y={size*0.6} width={size*0.15} height={size*0.2} rx="1" fill={lightAccent} />
+                    {/* TYPE 0: Landscape Photo */}
+                    {activeUiType === 0 && (
+                      <g className="transition-colors duration-300">
+                        <circle cx="16" cy="6" r="3" fill={lightAccent} />
+                        <polygon points="0,22 8,12 14,18 22,10 22,22" fill={darkAccent} />
                       </g>
                     )}
 
-                    {/* MINI UI TYPE 2: User Profile Card */}
-                    {b.uiType === 2 && (
-                      <g>
-                        <circle cx={size*0.3} cy={size*0.3} r={size*0.15} fill={darkAccent} />
-                        <rect x={size*0.15} y={size*0.6} width={size*0.6} height={size*0.1} rx="1" fill={lightAccent} />
-                        <rect x={size*0.15} y={size*0.75} width={size*0.4} height={size*0.1} rx="1" fill={darkAccent} />
+                    {/* TYPE 1: Browser Window */}
+                    {activeUiType === 1 && (
+                      <g className="transition-colors duration-300">
+                        <rect width="22" height="5" fill={darkAccent} rx="2" />
+                        <circle cx="3" cy="2.5" r="1" fill={lightAccent} />
+                        <circle cx="6" cy="2.5" r="1" fill={lightAccent} />
+                        <rect x="2" y="8" width="12" height="2" fill={darkAccent} />
+                        <rect x="2" y="12" width="16" height="2" fill={darkAccent} />
                       </g>
                     )}
 
-                    {/* MINI UI TYPE 3: Browser Window */}
-                    {b.uiType === 3 && (
-                      <g>
-                        <rect x={size*0.1} y={size*0.1} width={size*0.8} height={size*0.25} rx="1" fill={darkAccent} />
-                        <circle cx={size*0.25} cy={size*0.65} r={size*0.1} fill={lightAccent} />
-                        <circle cx={size*0.5} cy={size*0.65} r={size*0.1} fill={lightAccent} />
-                        <circle cx={size*0.75} cy={size*0.65} r={size*0.1} fill={lightAccent} />
+                    {/* TYPE 2: Bar Chart */}
+                    {activeUiType === 2 && (
+                      <g className="transition-colors duration-300">
+                        <rect x="3" y="12" width="4" height="8" fill={lightAccent} />
+                        <rect x="9" y="8" width="4" height="12" fill={darkAccent} />
+                        <rect x="15" y="4" width="4" height="16" fill={lightAccent} />
                       </g>
                     )}
 
-                    {/* MINI UI TYPE 4: Notification Image */}
-                    {b.uiType === 4 && (
-                      <g>
-                        <rect x={size*0.15} y={size*0.15} width={size*0.7} height={size*0.4} rx="1" fill={darkAccent} />
-                        <circle cx={size*0.8} cy={size*0.2} r={size*0.08} fill={lightAccent} />
-                        <rect x={size*0.15} y={size*0.7} width={size*0.7} height={size*0.1} rx="0.5" fill={darkAccent} />
+                    {/* TYPE 3: User Profile */}
+                    {activeUiType === 3 && (
+                      <g className="transition-colors duration-300">
+                        <circle cx="11" cy="8" r="4" fill={darkAccent} />
+                        <rect x="4" y="14" width="14" height="2" rx="1" fill={lightAccent} />
+                        <rect x="7" y="18" width="8" height="2" rx="1" fill={darkAccent} />
                       </g>
                     )}
+
+                    {/* TYPE 4: Code Editor */}
+                    {activeUiType === 4 && (
+                      <g className="transition-colors duration-300">
+                        <text x="2" y="7" fontSize="6" fill={darkAccent} fontFamily="monospace" fontWeight="bold">&gt;_</text>
+                        <rect x="2" y="10" width="10" height="2" fill={lightAccent} />
+                        <rect x="2" y="14" width="16" height="2" fill={darkAccent} />
+                        <rect x="2" y="18" width="8" height="2" fill={lightAccent} />
+                      </g>
+                    )}
+
+                    {/* TYPE 5: Video Player */}
+                    {activeUiType === 5 && (
+                      <g className="transition-colors duration-300">
+                        <polygon points="8,6 16,11 8,16" fill={darkAccent} />
+                        <rect x="2" y="19" width="18" height="1.5" fill={darkAccent} />
+                        <circle cx="6" cy="19.75" r="1.5" fill={lightAccent} />
+                      </g>
+                    )}
+
+                    {/* TYPE 6: Document/Text Lines */}
+                    {activeUiType === 6 && (
+                      <g className="transition-colors duration-300">
+                        <rect x="4" y="4" width="14" height="2" fill={darkAccent} />
+                        <rect x="4" y="8" width="10" height="2" fill={lightAccent} />
+                        <rect x="4" y="12" width="12" height="2" fill={darkAccent} />
+                        <rect x="4" y="16" width="8" height="2" fill={lightAccent} />
+                      </g>
+                    )}
+
+                    {/* TYPE 7: Folder Icon */}
+                    {activeUiType === 7 && (
+                      <g className="transition-colors duration-300">
+                        <path d="M 3 6 L 9 6 L 11 9 L 19 9 L 19 18 L 3 18 Z" fill={darkAccent} />
+                      </g>
+                    )}
+
                   </g>
                 );
               })}
@@ -224,23 +427,16 @@ export default function NotFound() {
         </div>
 
         {/* ---------------------------------------------------------
-            THE COLOR SLIDER (Smooth & Device Optimized)
+            THE CLEAN, DRIBBBLE-STYLE COLOR SLIDER
         --------------------------------------------------------- */}
-        <div className="w-full max-w-md mx-auto mb-16 flex flex-col items-center bg-[#0a0a0a]/80 backdrop-blur-md p-8 rounded-3xl border border-white/5 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
-          <div className={`${jetBrainsMono.className} text-[10px] text-zinc-400 uppercase tracking-widest font-bold mb-6 flex justify-between w-full`}>
-            <span>Alter Spectrum</span>
-            <span style={{ color: `hsl(${hue}, 90%, 60%)` }} className="transition-colors duration-300">
-              HZ-{Math.floor(hue)}
-            </span>
-          </div>
-          
+        <div className="w-full max-w-lg mx-auto mb-20 px-4">
           <input 
             type="range" 
             min="0" 
             max="360" 
             value={hue}
             onChange={(e) => setHue(Number(e.target.value))}
-            className="w-full h-2 rounded-full outline-none appearance-none cursor-pointer"
+            className="w-full h-3 rounded-full outline-none appearance-none cursor-pointer border border-white/10"
             style={{
               background: `linear-gradient(to right, 
                 hsl(0, 100%, 50%), hsl(60, 100%, 50%), 
@@ -248,33 +444,14 @@ export default function NotFound() {
                 hsl(240, 100%, 50%), hsl(300, 100%, 50%), hsl(360, 100%, 50%))`
             }}
           />
-          
-          <style dangerouslySetInnerHTML={{ __html: `
-            input[type=range]::-webkit-slider-thumb {
-              -webkit-appearance: none;
-              height: 24px;
-              width: 24px;
-              border-radius: 50%;
-              background: #fff;
-              cursor: pointer;
-              box-shadow: 0 0 20px hsl(${hue}, 100%, 50%);
-              transition: transform 0.1s;
-            }
-            input[type=range]::-webkit-slider-thumb:active {
-              transform: scale(1.15);
-            }
-          `}} />
-          
-          <p className="text-zinc-500 text-xs mt-6 font-light">Slide to recalibrate the visual engine.</p>
         </div>
 
         {/* ---------------------------------------------------------
             DYNAMIC CARTOON ICON & JOKE
         --------------------------------------------------------- */}
         <div className="text-center flex flex-col items-center mb-16 px-4">
-          <JokeIcon type={joke.type} />
-          
-          <h2 className="text-xl md:text-2xl text-white font-bold mb-3 tracking-tight">
+          {joke.icon}
+          <h2 className={`${spaceGrotesk.className} text-2xl md:text-4xl text-white font-bold mb-4 tracking-tight`}>
             Whoops, that page is gone.
           </h2>
           <p className="text-zinc-400 text-sm md:text-base font-light max-w-xl leading-relaxed">
