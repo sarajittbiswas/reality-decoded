@@ -9,12 +9,12 @@ const jetBrainsMono = JetBrains_Mono({ subsets: ['latin'] });
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 // ---------------------------------------------------------
-// 1. 15 HILARIOUS JOKES & UNIQUE ANIMATED CARTOONS
+// 1. 15 NON-TECHNICAL, HILARIOUS, SARCASTIC JOKES
 // ---------------------------------------------------------
 const JOKES_DB = [
   // --- ALIEN THEME ---
   {
-    text: "You've wandered off the grid. This page is currently orbiting Kepler-452b. We'll send a rover to check on it.",
+    text: "You scrolled so far you left Earth. Say hi to the aliens for us while we try to find this page.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100">
         <g className="animate-float">
@@ -28,7 +28,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "Error 404: The Zeta Reticulans abducted this report. We are currently negotiating its release.",
+    text: "This page was abducted by UFOs. We've received the ransom note, but honestly, we're not paying it.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-wiggle" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <path d="M 50 20 C 20 20, 10 50, 25 75 C 35 90, 65 90, 75 75 C 90 50, 80 20, 50 20 Z" />
@@ -39,7 +39,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "Transmission intercepted by Martian outposts. Please try a more terrestrial, earth-bound link.",
+    text: "We accidentally beamed this link to Mars. It should be back in a few lightyears. Check back then.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <path d="M 50 90 L 50 40 M 30 90 L 50 40 M 70 90 L 50 40" />
@@ -49,7 +49,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "This URL exists in a parallel dimension. Unfortunately, your router is stuck in this one.",
+    text: "This URL definitely exists... in a parallel universe. Unfortunately, you are stuck in this one.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-spin-slow" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="50" cy="50" r="10" />
@@ -60,9 +60,9 @@ const JOKES_DB = [
     )
   },
 
-  // --- SERVER / CORRUPTION THEME ---
+  // --- SERVER / BROKEN THEME ---
   {
-    text: "Systemic corruption doesn't just ruin infrastructure, it ruined this server block too.",
+    text: "Our server literally tripped and dropped your page. It's a mess everywhere down here.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <rect x="20" y="20" width="60" height="60" rx="4" />
@@ -76,7 +76,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "A shadow lobbyist bribed our database to hide this page. We're honestly as annoyed as you are.",
+    text: "We'd love to show you this content, but the intern spilled hot coffee on the main router.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-float" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <rect x="25" y="45" width="50" height="40" rx="4" />
@@ -87,7 +87,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "Our servers tripped over a classified wire. This URL has been permanently redacted by higher-ups.",
+    text: "This link is currently more broken than a fast-food ice cream machine. Give it a minute.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <path d="M 20 80 L 80 80 M 50 80 L 50 20 M 30 20 L 70 20" />
@@ -96,7 +96,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "The oligarchy bought this link and privatized the content. You can't afford the subscription to see it.",
+    text: "The page caught a cold and called in sick today. Please try again when it's feeling better.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-wiggle" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <circle cx="50" cy="50" r="30" />
@@ -107,7 +107,7 @@ const JOKES_DB = [
 
   // --- MATRIX / SIMULATION THEME ---
   {
-    text: "Simulation boundary reached. The alien developers clearly forgot to render this specific sector.",
+    text: "You broke the simulation. Please freeze exactly where you are while we come wipe your memory.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M 10 50 Q 50 10 90 50 Q 50 90 10 50" />
@@ -117,7 +117,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "Congratulations, you found a glitch in the matrix. Please stay exactly where you are for a memory wipe.",
+    text: "The matrix completely forgot to render this page. Try closing your eyes and opening them again.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-glitch" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <rect x="20" y="20" width="60" height="60" />
@@ -127,7 +127,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "Reality engine failed to load. We are completely out of RAM and existential dread.",
+    text: "You found a giant hole in reality. Please ignore the developers sweating profusely behind the curtain.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-pulse" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <rect x="30" y="20" width="40" height="60" rx="5" />
@@ -139,7 +139,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "You've clipped through the backrooms of the internet. We highly recommend you don't look behind you.",
+    text: "Oops. You just walked right into the internet's broom closet. It's dark in here.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <rect x="10" y="10" width="80" height="80" />
@@ -152,9 +152,9 @@ const JOKES_DB = [
     )
   },
 
-  // --- SARCASM THEME ---
+  // --- SARCASTIC THEME ---
   {
-    text: "We searched everywhere. Under the couch, in the cloud, behind the firewall. It's totally gone.",
+    text: "We looked everywhere. Under the digital couch, in the cloud, behind the firewall. It's just gone.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-radar" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <circle cx="45" cy="45" r="20" />
@@ -163,7 +163,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "This link is exactly as broken as the modern political system. Make of that what you will.",
+    text: "You clicked a link that literally doesn't exist. We are judging you silently, but with utmost respect.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-wiggle" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <path d="M 20 50 C 35 20, 65 20, 80 50 C 65 80, 35 80, 20 50 Z" strokeDasharray="10 5" />
@@ -172,7 +172,7 @@ const JOKES_DB = [
     )
   },
   {
-    text: "You clicked a link that literally doesn't exist. We are judging you silently, but respectfully.",
+    text: "This page completely ghosted us. It read your request, left us on 'read', and vanished into thin air.",
     icon: (
       <svg className="w-20 h-20 text-zinc-400 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-6 animate-float" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3">
         <circle cx="50" cy="50" r="40" />
@@ -187,7 +187,6 @@ const JOKES_DB = [
 // ---------------------------------------------------------
 // 2. THE SVG GRID MAP (5x5 Font Coordinates)
 // ---------------------------------------------------------
-// Standard 5x5 pixel font layout to spell "404", "REALITY", "DECODED"
 const CHAR_MAP: Record<string, string[]> = {
   '4': ["#...#", "#...#", "#####", "....#", "....#"],
   '0': [".###.", "#...#", "#...#", "#...#", ".###."],
@@ -205,7 +204,6 @@ const CHAR_MAP: Record<string, string[]> = {
 
 const buildCoordinates = () => {
   const coords: { x: number, y: number }[] = [];
-  
   const addWord = (word: string, startX: number, startY: number) => {
     let currX = startX;
     for (const char of word) {
@@ -219,26 +217,36 @@ const buildCoordinates = () => {
           }
         }
       }
-      currX += 6; // 5 wide + 1 space
+      currX += 6; 
     }
   };
-
-  // Center alignment logic for a 41-column max width grid
-  // 404 is 3 chars = 17 cols wide. Starts at (41 - 17)/2 = 12
   addWord("404", 12, 0);
-  // REALITY is 7 chars = 41 cols wide. Starts at 0.
   addWord("REALITY", 0, 7);
-  // DECODED is 7 chars = 41 cols wide. Starts at 0.
   addWord("DECODED", 0, 14);
-
   return coords;
 };
 
 // ---------------------------------------------------------
-// 3. MAIN PAGE
+// 3. COLOR NAME ENGINE
+// ---------------------------------------------------------
+const getColorName = (hue: number) => {
+  if (hue === 0) return "Pure White";
+  if (hue < 20) return "Crimson Red";
+  if (hue < 45) return "Sunset Orange";
+  if (hue < 70) return "Cyber Yellow";
+  if (hue < 150) return "Neon Green";
+  if (hue < 210) return "Electric Cyan";
+  if (hue < 270) return "Deep Blue";
+  if (hue < 320) return "Ultraviolet";
+  if (hue <= 360) return "Rose Pink";
+  return "Unknown";
+};
+
+// ---------------------------------------------------------
+// 4. MAIN PAGE
 // ---------------------------------------------------------
 export default function NotFound() {
-  const [hue, setHue] = useState(140);
+  const [hue, setHue] = useState(0); // Starts at Pure White (0)
   const [jokeIndex, setJokeIndex] = useState<number | null>(null);
 
   // Initialize Joke (No Repeats Logic)
@@ -261,7 +269,7 @@ export default function NotFound() {
       id: i,
       x: c.x,
       y: c.y,
-      baseUiType: Math.floor(Math.random() * 8), // 8 different mini UI designs!
+      baseUiType: Math.floor(Math.random() * 8), 
       hueOffset: Math.floor(Math.random() * 40) - 20,
       lightness: Math.floor(Math.random() * 30) + 40,
     }));
@@ -270,9 +278,16 @@ export default function NotFound() {
   if (jokeIndex === null) return null; // Wait for hydration
   const joke = JOKES_DB[jokeIndex];
 
+  // Helper variables for slider logic
+  const isWhite = hue === 0;
+  const sliderColor = isWhite ? "#ffffff" : `hsl(${hue}, 90%, 60%)`;
+
   return (
     <main className={`min-h-screen bg-[#050505] text-zinc-300 flex flex-col items-center justify-center relative overflow-x-hidden ${inter.className}`}>
       
+      {/* PERFECT SEO METADATA FOR CLIENT COMPONENT */}
+      <title>404 - Reality Not Found | Reality Decoded</title>
+
       {/* Background Grid */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] opacity-[0.3] pointer-events-none z-0"></div>
 
@@ -303,7 +318,7 @@ export default function NotFound() {
           background: #fff;
           border: 4px solid #000;
           cursor: pointer;
-          box-shadow: 0 0 20px hsl(${hue}, 100%, 50%);
+          box-shadow: 0 0 20px ${sliderColor};
           transition: transform 0.1s;
         }
         input[type=range]::-webkit-slider-thumb:active {
@@ -322,7 +337,6 @@ export default function NotFound() {
         {/* ---------------------------------------------------------
             THE "404 REALITY DECODED" MINIATURE SVG ENGINE
         --------------------------------------------------------- */}
-        {/* Width 41 cols * 24px = 984. Height 19 rows * 24px = 456. Perfect ratio for scaling */}
         <div className="w-full max-w-4xl mb-12">
           <svg viewBox="0 0 984 456" className="w-full h-auto drop-shadow-2xl overflow-visible">
             <g>
@@ -333,12 +347,13 @@ export default function NotFound() {
                 const posX = b.x * cellSize;
                 const posY = b.y * cellSize;
                 
-                // Shuffle logic! The type changes dynamically as you slide the hue!
-                const activeUiType = (b.baseUiType + Math.floor(hue / 30)) % 8;
+                // Shuffle logic! The UI block type changes as the hue slider moves
+                const activeUiType = (b.baseUiType + (isWhite ? 0 : Math.floor(hue / 30))) % 8;
 
-                const baseColor = `hsl(${hue + b.hueOffset}, 80%, ${b.lightness}%)`;
-                const darkAccent = `hsl(${hue + b.hueOffset}, 80%, ${b.lightness - 25}%)`;
-                const lightAccent = `hsl(${hue + b.hueOffset}, 80%, ${b.lightness + 25}%)`;
+                // Color overrides for the Pure White feature (0) vs Hue Spectrum (1-360)
+                const baseColor = isWhite ? `hsl(0, 0%, ${b.lightness + 20}%)` : `hsl(${hue + b.hueOffset}, 80%, ${b.lightness}%)`;
+                const darkAccent = isWhite ? `hsl(0, 0%, ${b.lightness - 10}%)` : `hsl(${hue + b.hueOffset}, 80%, ${b.lightness - 25}%)`;
+                const lightAccent = isWhite ? `hsl(0, 0%, 100%)` : `hsl(${hue + b.hueOffset}, 80%, ${b.lightness + 25}%)`;
 
                 return (
                   <g key={b.id} transform={`translate(${posX}, ${posY})`} className="transition-all duration-300 ease-out">
@@ -427,21 +442,33 @@ export default function NotFound() {
         </div>
 
         {/* ---------------------------------------------------------
-            THE CLEAN, DRIBBBLE-STYLE COLOR SLIDER
+            THE CLEAN, DRIBBBLE-STYLE COLOR SLIDER (WITH WHITE)
         --------------------------------------------------------- */}
         <div className="w-full max-w-lg mx-auto mb-20 px-4">
+          <div className={`${jetBrainsMono.className} text-[10px] uppercase tracking-widest font-bold mb-4 flex justify-between w-full`}>
+            <span className="text-zinc-500">Alter Spectrum</span>
+            <span style={{ color: sliderColor }} className="transition-colors duration-300 drop-shadow-md">
+              {getColorName(hue)}
+            </span>
+          </div>
+          
           <input 
             type="range" 
             min="0" 
             max="360" 
             value={hue}
             onChange={(e) => setHue(Number(e.target.value))}
-            className="w-full h-3 rounded-full outline-none appearance-none cursor-pointer border border-white/10"
+            className="w-full h-3 rounded-full outline-none appearance-none cursor-pointer border border-white/20 shadow-inner"
             style={{
               background: `linear-gradient(to right, 
-                hsl(0, 100%, 50%), hsl(60, 100%, 50%), 
-                hsl(120, 100%, 50%), hsl(180, 100%, 50%), 
-                hsl(240, 100%, 50%), hsl(300, 100%, 50%), hsl(360, 100%, 50%))`
+                #ffffff 0%, 
+                hsl(15, 100%, 50%) 10%, 
+                hsl(60, 100%, 50%) 25%, 
+                hsl(120, 100%, 50%) 40%, 
+                hsl(180, 100%, 50%) 55%, 
+                hsl(240, 100%, 50%) 70%, 
+                hsl(300, 100%, 50%) 85%, 
+                hsl(360, 100%, 50%) 100%)`
             }}
           />
         </div>
@@ -463,12 +490,12 @@ export default function NotFound() {
             ACTION BUTTONS
         --------------------------------------------------------- */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto px-6">
-          <Link 
-            href="/" 
+          <button 
+            onClick={() => window.location.reload()}
             className={`${jetBrainsMono.className} w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest bg-white text-black transition-all duration-300 hover:bg-zinc-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.1)]`}
           >
             Reboot Simulation
-          </Link>
+          </button>
           <Link 
             href="/archives" 
             className={`${jetBrainsMono.className} w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest bg-[#0a0a0a] text-zinc-400 border border-white/10 transition-all duration-300 hover:bg-white/5 hover:text-white hover:border-white/20`}
