@@ -214,7 +214,8 @@ export default function RootLayout({
               { name: 'Authors', link: '/author' },
               { name: 'Careers', link: '/careers' },
               { name: 'Our Team', link: '/team' },
-              { name: 'Community Hub', link: '/share' }
+              { name: 'Community Hub', link: '/share' },
+              { name: 'FAQ & Directives', link: '/faq' }
             ].map((item) => (
               <li key={item.name}>
                 <a href={item.link} className="text-gray-400 hover:text-white flex items-center gap-3 group transition-all text-sm">
@@ -237,6 +238,7 @@ export default function RootLayout({
         {[
           { name: 'Terms of Service', link: '/terms' },
           { name: 'Privacy Policy', link: '/privacy' },
+          { name: 'Cookie Policy', link: '/cookie-policy' },
           { name: 'Disclaimer', link: '/disclaimer' },
           { name: 'Editorial Policy', link: '/editorial-policy' },
           { name: 'Whistleblower Privilege', link: '/legal' },
