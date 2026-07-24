@@ -35,18 +35,21 @@ const calculateReadingTime = (text: string) => {
 // ==========================================
 // SEO & METADATA GENERATOR
 // ==========================================
-
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   try {
     const resolvedParams = await params;
     const db = (getRequestContext().env as any).reality_decoded_db;
     
-    const article = await db.prepare("SELECT title, category, content FROM articles WHERE slug = ?").bind(resolvedParams.slug).first();
+    // 🚨 FIX: Added 'excerpt' to the SELECT statement!
+    const article = await db.prepare("SELECT title, category, content, excerpt FROM articles WHERE slug = ?").bind(resolvedParams.slug).first();
     
     if (!article) return { title: 'Not Found | Reality Decoded' };
 
     const baseUrl = 'https://realitydecoded.in';
     const cleanDescription = (article.content as string).replace(/<[^>]*>?/gm, '').substring(0, 160) + '...';
+    
+    // 🚨 FIX: Your perfectly clean fallback logic
+    const finalDescription = (article.excerpt as string) || cleanDescription;
 
     const extractedImg = getFirstImage(article.content as string);
     
@@ -58,10 +61,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
     return {
       title: `${article.title} | Reality Decoded`,
-      description: cleanDescription,
+      description: finalDescription,
       openGraph: {
         title: article.title as string,
-        description: cleanDescription,
+        description: finalDescription,
         url: `${baseUrl}/blogs/${resolvedParams.slug}`,
         siteName: 'Reality Decoded',
         type: 'article',
@@ -77,7 +80,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       twitter: {
         card: 'summary_large_image',
         title: article.title as string,
-        description: cleanDescription,
+        description: finalDescription,
         images: [imageUrl],
       }
     };

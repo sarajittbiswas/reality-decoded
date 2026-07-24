@@ -33,10 +33,6 @@ const getLocalTime = (timezone: string) => {
   }
 };
 
-const getSafeId = (str: string) => {
-  return str.toLowerCase().replace(/[^a-z0-9]/g, '-');
-};
-
 // ==========================================
 // DATA FETCHERS
 // ==========================================
@@ -84,6 +80,9 @@ export default async function AuthorProfilePage(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { id } = await props.params;
+  const searchParams = await props.searchParams;
+   
+  const activeTab = (searchParams?.tab as string)?.toLowerCase() || 'all';
   const decodedIdentifier = decodeURIComponent(id);
   const db = (getRequestContext().env as any).reality_decoded_db;
   
@@ -108,15 +107,21 @@ export default async function AuthorProfilePage(props: {
   });
   const uniqueCategories = Array.from(categoryMap.values()) as string[];
 
+  // FILTER DISPLAYED ARTICLES SERVER-SIDE
+  const displayedArticles = liveArticles.filter((a: any) => {
+    if (activeTab === 'all') return true;
+    const articleCategory = ((a.category && a.category.trim() !== '') ? a.category : 'Uncategorised').toLowerCase();
+    return articleCategory === activeTab;
+  });
+
   return (
-    // 🚨 FIX 1: Explicitly force the main container to behave as a top-aligned flex column
-    <main className="w-full bg-[#000000] text-white min-h-screen pt-32 pb-32 overflow-x-hidden flex flex-col justify-start">
+    <main className="w-full bg-[#000000] text-white min-h-screen pt-32 pb-32 overflow-x-hidden">
       
-      {/* 🚨 FIX 2: Added 'items-start content-start mb-auto' to ensure the grid never floats downward */}
-      <div className="max-w-[1400px] w-full mx-auto px-5 sm:px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] items-start content-start gap-12 lg:gap-24 mt-0 mb-auto">
+      {/* GRID CONTAINER: items-start prevents vertical stretching */}
+      <div className="max-w-[1400px] w-full mx-auto px-5 sm:px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] items-start gap-12 lg:gap-24">
         
-        {/* 🚨 FIX 3: Added 'self-start' so the sidebar is rigidly glued to the top of its grid cell */}
-        <aside className="flex flex-col self-start items-start lg:sticky top-32 w-full">
+        {/* LEFT SIDEBAR: Pinned cleanly to the top */}
+        <aside className="flex flex-col self-start lg:sticky top-32 w-full">
           <Link href="/author" className="text-gray-500 hover:text-white transition-colors text-sm flex items-center gap-2 mb-8 font-mono">
              &lt; All Humans
           </Link>
@@ -173,12 +178,6 @@ export default async function AuthorProfilePage(props: {
                 {agent.instagram}
               </a>
             )}
-            {agent?.facebook && (
-              <a href={`https://facebook.com/${agent.facebook}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:text-white transition-colors truncate">
-                <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
-                {agent.facebook}
-              </a>
-            )}
             {agent?.reddit && (
               <a href={`https://reddit.com/user/${agent.reddit}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:text-white transition-colors truncate">
                 <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
@@ -194,78 +193,48 @@ export default async function AuthorProfilePage(props: {
           </div>
         </aside>
 
-        {/* --- RIGHT CONTENT (GRID) --- */}
-        <section className="relative lg:border-l lg:border-white/10 lg:pl-16 w-full max-w-full">
+        {/* RIGHT CONTENT: min-h-[60vh] stops the page height from violently collapsing */}
+        <section className="lg:border-l lg:border-white/10 lg:pl-16 w-full max-w-full min-h-[60vh]">
           
-          {/* PURE CSS RADIO FILTER ENGINE */}
-          <style dangerouslySetInnerHTML={{ __html: `
-            #articles-container .article-card { display: none; }
-            
-            #tab-all:checked ~ .tabs-nav label[for="tab-all"] {
-              background-color: white !important;
-              color: black !important;
-              border-color: white !important;
-            }
-            #tab-all:checked ~ #articles-container .article-card {
-              display: block;
-            }
-
-            ${uniqueCategories.map(cat => {
-              const safeId = getSafeId(cat);
-              return `
-                #tab-${safeId}:checked ~ .tabs-nav label[for="tab-${safeId}"] {
-                  background-color: white !important;
-                  color: black !important;
-                  border-color: white !important;
-                }
-                #tab-${safeId}:checked ~ #articles-container .article-${safeId} {
-                  display: block;
-                }
-              `;
-            }).join('\n')}
-          `}} />
-
-          {/* HIDDEN RADIO INPUTS */}
-          <input type="radio" name="author-tabs" id="tab-all" className="hidden" defaultChecked />
-          {uniqueCategories.map(cat => (
-            <input type="radio" name="author-tabs" id={`tab-${getSafeId(cat)}`} className="hidden" key={`input-${cat}`} />
-          ))}
-
-          {/* TAB NAVIGATION LABELS */}
           <div className="tabs-nav flex gap-2 mb-10 border-b border-white/5 pb-4 overflow-x-auto scrollbar-hide hide-scroll-bar">
-            <label 
-              htmlFor="tab-all"
-              className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border border-white/10 text-gray-400 hover:text-white cursor-pointer select-none"
+            {/* NEXT.JS LINK WITH SCROLL={FALSE} */}
+            <Link 
+              href={`/author/${id}?tab=all`}
+              scroll={false} 
+              className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border ${activeTab === 'all' ? 'bg-white text-black border-white' : 'border-white/10 text-gray-400 hover:text-white'}`}
             >
               All Posts
-            </label>
+            </Link>
             
-            {uniqueCategories.map((category) => (
-              <label 
-                key={`label-${category}`}
-                htmlFor={`tab-${getSafeId(category)}`}
-                className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap capitalize transition-colors border border-white/10 text-gray-400 hover:text-white cursor-pointer select-none"
-              >
-                {category}
-              </label>
-            ))}
+            {uniqueCategories.map((category) => {
+              const tabValue = category.toLowerCase();
+              return (
+                <Link 
+                  key={tabValue}
+                  href={`/author/${id}?tab=${encodeURIComponent(tabValue)}`} 
+                  scroll={false}
+                  className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap capitalize transition-colors border ${activeTab === tabValue ? 'bg-white text-black border-white' : 'border-white/10 text-gray-400 hover:text-white'}`}
+                >
+                  {category}
+                </Link>
+              );
+            })}
           </div>
 
           {/* ARTICLES GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-10 sm:gap-y-12" id="articles-container">
-            {liveArticles.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-10 sm:gap-y-12">
+            {displayedArticles.length === 0 ? (
               <p className="text-gray-500 font-mono text-sm col-span-2">No transmissions logged.</p>
             ) : (
-              liveArticles.map((article: any) => {
+              displayedArticles.map((article: any) => {
                 const imgUrl = getFirstImage(article.content) || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop';
                 const articleCat = ((article.category && article.category.trim() !== '') ? article.category : 'Uncategorised');
-                const safeCatId = getSafeId(articleCat);
                 
                 return (
                   <Link 
                     href={`/blogs/${article.slug}`} 
                     key={article.id} 
-                    className={`article-card article-${safeCatId} group block`}
+                    className="group block"
                   >
                     <div className="w-full aspect-[16/10] bg-[#111] rounded-xl sm:rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-white/5 group-hover:border-white/20 transition-all shadow-lg">
                        <img src={imgUrl} alt={article.title} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
