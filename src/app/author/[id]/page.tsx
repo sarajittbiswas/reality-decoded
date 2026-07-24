@@ -33,6 +33,10 @@ const getLocalTime = (timezone: string) => {
   }
 };
 
+const getSafeId = (str: string) => {
+  return str.toLowerCase().replace(/[^a-z0-9]/g, '-');
+};
+
 // ==========================================
 // DATA FETCHERS
 // ==========================================
@@ -80,9 +84,6 @@ export default async function AuthorProfilePage(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { id } = await props.params;
-  const searchParams = await props.searchParams;
-   
-  const activeTab = (searchParams?.tab as string)?.toLowerCase() || 'all';
   const decodedIdentifier = decodeURIComponent(id);
   const db = (getRequestContext().env as any).reality_decoded_db;
   
@@ -93,7 +94,7 @@ export default async function AuthorProfilePage(props: {
   const authorAvatar = agent?.avatar || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=100&auto=format&fit=crop';
   const localTime = agent?.timezone ? getLocalTime(agent.timezone as string) : null;
 
-  // 1. DYNAMICALLY EXTRACT CATEGORIES
+  // DYNAMICALLY EXTRACT CATEGORIES (Case-insensitive deduplication)
   const rawCategories = liveArticles.map((a: any) => {
     return (a.category && a.category.trim() !== '') ? a.category : 'Uncategorised';
   });
@@ -108,12 +109,14 @@ export default async function AuthorProfilePage(props: {
   const uniqueCategories = Array.from(categoryMap.values()) as string[];
 
   return (
+    // 🚨 FIX 1: Explicitly force the main container to behave as a top-aligned flex column
     <main className="w-full bg-[#000000] text-white min-h-screen pt-32 pb-32 overflow-x-hidden flex flex-col justify-start">
       
-      <div className="max-w-[1400px] w-full mx-auto px-5 sm:px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] items-start content-start gap-12 lg:gap-24 mb-auto mt-0">
+      {/* 🚨 FIX 2: Added 'items-start content-start mb-auto' to ensure the grid never floats downward */}
+      <div className="max-w-[1400px] w-full mx-auto px-5 sm:px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] items-start content-start gap-12 lg:gap-24 mt-0 mb-auto">
         
-        {/* --- LEFT SIDEBAR (RESEND STYLE) --- */}
-        <aside className="flex flex-col items-start lg:sticky top-32 h-max w-full self-start">
+        {/* 🚨 FIX 3: Added 'self-start' so the sidebar is rigidly glued to the top of its grid cell */}
+        <aside className="flex flex-col self-start items-start lg:sticky top-32 w-full">
           <Link href="/author" className="text-gray-500 hover:text-white transition-colors text-sm flex items-center gap-2 mb-8 font-mono">
              &lt; All Humans
           </Link>
@@ -189,123 +192,103 @@ export default async function AuthorProfilePage(props: {
               <ExpandableBio bio={agent.bio as string} />
             )}
           </div>
-
         </aside>
 
         {/* --- RIGHT CONTENT (GRID) --- */}
-        <section className="lg:border-l lg:border-white/10 lg:pl-16 w-full max-w-full">
+        <section className="relative lg:border-l lg:border-white/10 lg:pl-16 w-full max-w-full">
           
-          <div className="flex gap-2 mb-10 border-b border-white/5 pb-4 overflow-x-auto scrollbar-hide hide-scroll-bar">
+          {/* PURE CSS RADIO FILTER ENGINE */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            #articles-container .article-card { display: none; }
             
-            <button 
-              data-tab="all"
-              className={`tab-btn px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'all' ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
+            #tab-all:checked ~ .tabs-nav label[for="tab-all"] {
+              background-color: white !important;
+              color: black !important;
+              border-color: white !important;
+            }
+            #tab-all:checked ~ #articles-container .article-card {
+              display: block;
+            }
+
+            ${uniqueCategories.map(cat => {
+              const safeId = getSafeId(cat);
+              return `
+                #tab-${safeId}:checked ~ .tabs-nav label[for="tab-${safeId}"] {
+                  background-color: white !important;
+                  color: black !important;
+                  border-color: white !important;
+                }
+                #tab-${safeId}:checked ~ #articles-container .article-${safeId} {
+                  display: block;
+                }
+              `;
+            }).join('\n')}
+          `}} />
+
+          {/* HIDDEN RADIO INPUTS */}
+          <input type="radio" name="author-tabs" id="tab-all" className="hidden" defaultChecked />
+          {uniqueCategories.map(cat => (
+            <input type="radio" name="author-tabs" id={`tab-${getSafeId(cat)}`} className="hidden" key={`input-${cat}`} />
+          ))}
+
+          {/* TAB NAVIGATION LABELS */}
+          <div className="tabs-nav flex gap-2 mb-10 border-b border-white/5 pb-4 overflow-x-auto scrollbar-hide hide-scroll-bar">
+            <label 
+              htmlFor="tab-all"
+              className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border border-white/10 text-gray-400 hover:text-white cursor-pointer select-none"
             >
               All Posts
-            </button>
+            </label>
             
-            {uniqueCategories.map((category) => {
-              const tabValue = category.toLowerCase();
-              return (
-                <button 
-                  key={tabValue}
-                  data-tab={tabValue}
-                  className={`tab-btn px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap capitalize transition-colors ${activeTab === tabValue ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
-                >
-                  {category}
-                </button>
-              );
-            })}
+            {uniqueCategories.map((category) => (
+              <label 
+                key={`label-${category}`}
+                htmlFor={`tab-${getSafeId(category)}`}
+                className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap capitalize transition-colors border border-white/10 text-gray-400 hover:text-white cursor-pointer select-none"
+              >
+                {category}
+              </label>
+            ))}
           </div>
 
+          {/* ARTICLES GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-10 sm:gap-y-12" id="articles-container">
-            {liveArticles.length === 0 && (
+            {liveArticles.length === 0 ? (
               <p className="text-gray-500 font-mono text-sm col-span-2">No transmissions logged.</p>
+            ) : (
+              liveArticles.map((article: any) => {
+                const imgUrl = getFirstImage(article.content) || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop';
+                const articleCat = ((article.category && article.category.trim() !== '') ? article.category : 'Uncategorised');
+                const safeCatId = getSafeId(articleCat);
+                
+                return (
+                  <Link 
+                    href={`/blogs/${article.slug}`} 
+                    key={article.id} 
+                    className={`article-card article-${safeCatId} group block`}
+                  >
+                    <div className="w-full aspect-[16/10] bg-[#111] rounded-xl sm:rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-white/5 group-hover:border-white/20 transition-all shadow-lg">
+                       <img src={imgUrl} alt={article.title} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
+                    </div>
+                    
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-200 group-hover:text-white transition-colors mb-2 leading-snug line-clamp-2">
+                      {article.title}
+                    </h3>
+                    
+                    <div className="text-gray-500 text-xs sm:text-sm font-mono flex items-center justify-between mt-3">
+                      <span>{new Date(article.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-purple-400 border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 rounded">
+                        {articleCat}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })
             )}
-            
-            <p id="empty-state" className="text-gray-500 font-mono text-sm col-span-2" style={{ display: 'none' }}>
-              No transmissions logged for this category.
-            </p>
-
-            {liveArticles.map((article: any) => {
-              const imgUrl = getFirstImage(article.content) || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop';
-              const articleCat = ((article.category && article.category.trim() !== '') ? article.category : 'Uncategorised').toLowerCase();
-              const isVisible = activeTab === 'all' || activeTab === articleCat;
-              
-              return (
-                <Link 
-                  href={`/blogs/${article.slug}`} 
-                  key={article.id} 
-                  data-category={articleCat}
-                  className="article-card group block"
-                  style={{ display: isVisible ? 'block' : 'none' }}
-                >
-                  <div className="w-full aspect-[16/10] bg-[#111] rounded-xl sm:rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-white/5 group-hover:border-white/20 transition-all shadow-lg">
-                     <img src={imgUrl} alt={article.title} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
-                  </div>
-                  
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-200 group-hover:text-white transition-colors mb-2 leading-snug line-clamp-2">
-                    {article.title}
-                  </h3>
-                  
-                  <div className="text-gray-500 text-xs sm:text-sm font-mono flex items-center justify-between mt-3">
-                    <span>{new Date(article.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                    <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-purple-400 border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 rounded">
-                      {(article.category && article.category.trim() !== '') ? article.category : 'Uncategorised'}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
           </div>
         </section>
         
       </div>
-      
-      {/* 🚨 FIX: Bulletproof Event Delegation Script. This binds globally to the document once, meaning the tabs are NEVER dead, regardless of Next.js soft-routing. */}
-      <script dangerouslySetInnerHTML={{ __html: `
-        if (typeof window !== 'undefined' && !window.__authorTabsInitialized) {
-          window.__authorTabsInitialized = true;
-          document.addEventListener('click', function(e) {
-            const btn = e.target.closest('.tab-btn');
-            if (!btn) return;
-            
-            e.preventDefault();
-            const selectedTab = btn.getAttribute('data-tab');
-            
-            // Update Button Visuals
-            const activeClasses = ['bg-white', 'text-black'];
-            const inactiveClasses = ['border', 'border-white/10', 'text-gray-400', 'hover:text-white'];
-            
-            document.querySelectorAll('.tab-btn').forEach(b => {
-              b.classList.remove(...activeClasses);
-              b.classList.add(...inactiveClasses);
-            });
-            btn.classList.remove(...inactiveClasses);
-            btn.classList.add(...activeClasses);
-            
-            // Filter Articles Instantly
-            let visibleCount = 0;
-            document.querySelectorAll('.article-card').forEach(card => {
-              if (selectedTab === 'all' || card.getAttribute('data-category') === selectedTab) {
-                card.style.display = 'block';
-                visibleCount++;
-              } else {
-                card.style.display = 'none';
-              }
-            });
-            
-            // Toggle empty state
-            const emptyState = document.getElementById('empty-state');
-            if (emptyState) emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
-            
-            // Quietly update URL without reloading
-            const url = new URL(window.location);
-            url.searchParams.set('tab', selectedTab);
-            window.history.replaceState({}, '', url);
-          });
-        }
-      `}} />
       
       <style dangerouslySetInnerHTML={{ __html: `
         .hide-scroll-bar::-webkit-scrollbar {
