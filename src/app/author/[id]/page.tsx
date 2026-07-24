@@ -103,7 +103,7 @@ export default async function AuthorProfilePage(props: {
   rawCategories.forEach((cat: string) => {
     const lower = cat.toLowerCase();
     if (!categoryMap.has(lower)) {
-      categoryMap.set(lower, cat); // Keeps the original casing for display, but deduplicates by lowercase
+      categoryMap.set(lower, cat); 
     }
   });
   const uniqueCategories = Array.from(categoryMap.values()) as string[];
@@ -119,8 +119,8 @@ export default async function AuthorProfilePage(props: {
     <main className="w-full bg-[#000000] text-white min-h-screen pt-32 pb-32 overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-5 sm:px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-12 lg:gap-24">
         
-        {/* --- LEFT SIDEBAR (RESEND STYLE) --- */}
-        <aside className="flex flex-col items-start lg:sticky top-32 h-max w-full">
+        {/* 🚨 FIX: Added 'self-start' here so short sidebars never drift down the page */}
+        <aside className="flex flex-col items-start lg:sticky top-32 h-max w-full self-start">
           <Link href="/author" className="text-gray-500 hover:text-white transition-colors text-sm flex items-center gap-2 mb-8 font-mono">
              &lt; All Humans
           </Link>
@@ -191,8 +191,7 @@ export default async function AuthorProfilePage(props: {
             )}
           </div>
 
-          {/* BIO RESTORED TO ITS ORIGINAL POSITION */}
-          <div className="mt-6">
+          <div className="mt-6 w-full">
             {agent?.bio && (
               <ExpandableBio bio={agent.bio as string} />
             )}
@@ -204,9 +203,11 @@ export default async function AuthorProfilePage(props: {
         <section className="lg:border-l lg:border-white/10 lg:pl-16 w-full max-w-full">
           
           <div className="flex gap-2 mb-10 border-b border-white/5 pb-4 overflow-x-auto scrollbar-hide hide-scroll-bar">
-            {/* 3. DYNAMIC TAB RENDERING */}
+            {/* 🚨 FIX: Added prefetch={true} to drastically speed up tab switching */}
             <Link 
               href={`/author/${id}?tab=all`} 
+              scroll={false}
+              prefetch={true}
               className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'all' ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
             >
               All Posts
@@ -218,6 +219,8 @@ export default async function AuthorProfilePage(props: {
                 <Link 
                   key={tabValue}
                   href={`/author/${id}?tab=${encodeURIComponent(tabValue)}`} 
+                  scroll={false}
+                  prefetch={true}
                   className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap capitalize transition-colors ${activeTab === tabValue ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
                 >
                   {category}
@@ -244,7 +247,6 @@ export default async function AuthorProfilePage(props: {
                     
                     <div className="text-gray-500 text-xs sm:text-sm font-mono flex items-center justify-between mt-3">
                       <span>{new Date(article.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      {/* CORRECT FALLBACK TAG */}
                       <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-purple-400 border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 rounded">
                         {(article.category && article.category.trim() !== '') ? article.category : 'Uncategorised'}
                       </span>
