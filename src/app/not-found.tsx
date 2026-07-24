@@ -227,12 +227,10 @@ const buildCoordinates = () => {
 };
 
 // ---------------------------------------------------------
-// 3. HEX COLOR CONVERTER (Real-time Math Math)
+// 3. HEX COLOR CONVERTER
 // ---------------------------------------------------------
 const getHexCode = (hue: number, isWhite: boolean) => {
   if (isWhite) return "#FFFFFF";
-  
-  // Converts HSL(hue, 80%, 60%) directly to a HEX code string
   const h = hue;
   const s = 80;
   const l = 60;
@@ -251,19 +249,14 @@ const getHexCode = (hue: number, isWhite: boolean) => {
 // 4. MAIN PAGE
 // ---------------------------------------------------------
 export default function NotFound() {
-  const [hue, setHue] = useState(0); // Starts at Pure White (0)
+  const [hue, setHue] = useState(0); 
   const [jokeIndex, setJokeIndex] = useState<number | null>(null);
-
-  // FIX: Force document title perfectly on mount so Next.js doesn't override it.
-  useEffect(() => {
-    document.title = "404 - Reality Not Found | Reality Decoded";
-  }, []);
 
   // Initialize Joke (No Repeats Logic)
   useEffect(() => {
     let seen = JSON.parse(sessionStorage.getItem('seen404Jokes') || '[]');
     if (seen.length >= JOKES_DB.length) {
-      seen = []; // Reset when all are seen
+      seen = []; 
     }
     const unseenIndices = JOKES_DB.map((_, i) => i).filter(i => !seen.includes(i));
     const randomIdx = unseenIndices[Math.floor(Math.random() * unseenIndices.length)];
@@ -285,7 +278,16 @@ export default function NotFound() {
     }));
   }, []);
 
-  if (jokeIndex === null) return null; // Wait for hydration
+  // FIX: This ensures the title tag is physically injected into the DOM 
+  // during the server-side render, before the client hydration even happens.
+  if (jokeIndex === null) {
+    return (
+      <main className={`min-h-screen bg-[#050505] ${inter.className}`}>
+        <title>404 - Reality Not Found | Reality Decoded</title>
+      </main>
+    );
+  }
+
   const joke = JOKES_DB[jokeIndex];
 
   // Helper variables for slider logic
@@ -296,6 +298,7 @@ export default function NotFound() {
   return (
     <main className={`min-h-screen bg-[#050505] text-zinc-300 flex flex-col items-center justify-center relative overflow-x-hidden ${inter.className}`}>
       
+      {/* PERFECT SEO METADATA FOR CLIENT COMPONENT */}
       <title>404 - Reality Not Found | Reality Decoded</title>
 
       {/* Background Grid */}
@@ -346,8 +349,6 @@ export default function NotFound() {
 
         {/* ---------------------------------------------------------
             THE "404 REALITY DECODED" MINIATURE SVG ENGINE
-            FIX: Removed transitions from internal SVGs to completely 
-            eliminate lag while dragging the slider. It is now 60FPS.
         --------------------------------------------------------- */}
         <div className="w-full max-w-4xl mb-24 px-2">
           <svg viewBox="0 0 984 456" className="w-full h-auto drop-shadow-2xl overflow-visible">
@@ -359,10 +360,8 @@ export default function NotFound() {
                 const posX = b.x * cellSize;
                 const posY = b.y * cellSize;
                 
-                // Shuffle logic! The UI block type changes as the hue slider moves
                 const activeUiType = (b.baseUiType + (isWhite ? 0 : Math.floor(hue / 30))) % 8;
 
-                // Color overrides for the Pure White feature (0) vs Hue Spectrum (1-360)
                 const baseColor = isWhite ? `hsl(0, 0%, ${b.lightness + 20}%)` : `hsl(${hue + b.hueOffset}, 80%, ${b.lightness}%)`;
                 const darkAccent = isWhite ? `hsl(0, 0%, ${b.lightness - 10}%)` : `hsl(${hue + b.hueOffset}, 80%, ${b.lightness - 25}%)`;
                 const lightAccent = isWhite ? `hsl(0, 0%, 100%)` : `hsl(${hue + b.hueOffset}, 80%, ${b.lightness + 25}%)`;
@@ -370,10 +369,8 @@ export default function NotFound() {
                 return (
                   <g key={b.id} transform={`translate(${posX}, ${posY})`}>
                     
-                    {/* The Base Card Block */}
                     <rect width={actualSize} height={actualSize} rx="2" fill={baseColor} />
 
-                    {/* TYPE 0: Landscape Photo */}
                     {activeUiType === 0 && (
                       <g>
                         <circle cx="16" cy="6" r="3" fill={lightAccent} />
@@ -381,7 +378,6 @@ export default function NotFound() {
                       </g>
                     )}
 
-                    {/* TYPE 1: Browser Window */}
                     {activeUiType === 1 && (
                       <g>
                         <rect width="22" height="5" fill={darkAccent} rx="2" />
@@ -392,7 +388,6 @@ export default function NotFound() {
                       </g>
                     )}
 
-                    {/* TYPE 2: Bar Chart */}
                     {activeUiType === 2 && (
                       <g>
                         <rect x="3" y="12" width="4" height="8" fill={lightAccent} />
@@ -401,7 +396,6 @@ export default function NotFound() {
                       </g>
                     )}
 
-                    {/* TYPE 3: User Profile */}
                     {activeUiType === 3 && (
                       <g>
                         <circle cx="11" cy="8" r="4" fill={darkAccent} />
@@ -410,7 +404,6 @@ export default function NotFound() {
                       </g>
                     )}
 
-                    {/* TYPE 4: Code Editor */}
                     {activeUiType === 4 && (
                       <g>
                         <text x="2" y="7" fontSize="6" fill={darkAccent} fontFamily="monospace" fontWeight="bold">&gt;_</text>
@@ -420,7 +413,6 @@ export default function NotFound() {
                       </g>
                     )}
 
-                    {/* TYPE 5: Video Player */}
                     {activeUiType === 5 && (
                       <g>
                         <polygon points="8,6 16,11 8,16" fill={darkAccent} />
@@ -429,7 +421,6 @@ export default function NotFound() {
                       </g>
                     )}
 
-                    {/* TYPE 6: Document/Text Lines */}
                     {activeUiType === 6 && (
                       <g>
                         <rect x="4" y="4" width="14" height="2" fill={darkAccent} />
@@ -439,7 +430,6 @@ export default function NotFound() {
                       </g>
                     )}
 
-                    {/* TYPE 7: Folder Icon */}
                     {activeUiType === 7 && (
                       <g>
                         <path d="M 3 6 L 9 6 L 11 9 L 19 9 L 19 18 L 3 18 Z" fill={darkAccent} />
@@ -455,7 +445,6 @@ export default function NotFound() {
 
         {/* ---------------------------------------------------------
             THE CLEAN, DRIBBBLE-STYLE COLOR SLIDER (WITH HEX CODES)
-            FIX: Added padding top/bottom to distance it from the 404 text
         --------------------------------------------------------- */}
         <div className="w-full max-w-lg mx-auto mb-24 px-4 mt-6">
           <div className={`${jetBrainsMono.className} text-[10px] md:text-xs uppercase tracking-widest font-bold mb-5 flex justify-between w-full items-end`}>
