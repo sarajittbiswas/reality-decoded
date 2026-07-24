@@ -1,5 +1,7 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import Link from 'next/link';
+import { Metadata } from 'next';
+import { D1Database } from '@cloudflare/workers-types';
 import ExpandableBio from '@/components/ExpandableBio';
 
 export const runtime = 'edge';
@@ -8,6 +10,7 @@ export const runtime = 'edge';
 // UTILITIES
 // ==========================================
 const getFirstImage = (html: string) => {
+  if (!html) return null;
   const match = html.match(/<img[^>]+src="([^">]+)"/);
   return match ? match[1] : null;
 };
@@ -31,29 +34,15 @@ const getLocalTime = (timezone: string) => {
 };
 
 // ==========================================
-// MAIN AUTHOR COMPONENT
+// DATA FETCHERS
 // ==========================================
-export default async function AuthorProfilePage(props: { 
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-   const { id } = await props.params;
-   const searchParams = await props.searchParams;
-   
-   const activeTab = (searchParams?.tab as string)?.toLowerCase() || 'all';
-   
-   const decodedIdentifier = decodeURIComponent(id);
-   
-   const db = (getRequestContext().env as any).reality_decoded_db;
-  
-  const agent = await db.prepare(
+async function getAgent(decodedIdentifier: string, db: D1Database) {
+  return await db.prepare(
     `SELECT * FROM syndicate_agents WHERE id = ? OR name = ?`
   ).bind(decodedIdentifier, decodedIdentifier).first();
+}
 
-  const authorName = agent?.name || decodedIdentifier;
-  const authorAvatar = agent?.avatar || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=100&auto=format&fit=crop';
-  const localTime = agent?.timezone ? getLocalTime(agent.timezone as string) : null;
-
+async function getLiveArticles(decodedIdentifier: string, db: D1Database) {
   const { results: allArticles } = await db.prepare(
     `SELECT * FROM articles 
      WHERE status IN ('published', 'scheduled') 
@@ -62,19 +51,73 @@ export default async function AuthorProfilePage(props: {
   ).bind(decodedIdentifier, decodedIdentifier).all();
 
   const now = new Date();
-  const liveArticles = allArticles.filter((a: any) => 
+  return allArticles.filter((a: any) => 
     a.status === 'published' || 
     (a.status === 'scheduled' && getISTDate(a.scheduled_for) <= now)
   );
+}
 
+// ==========================================
+// METADATA GENERATOR (Title & SEO)
+// ==========================================
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const decodedIdentifier = decodeURIComponent(id);
+  const db = (getRequestContext().env as any).reality_decoded_db;
+  const agent = await getAgent(decodedIdentifier, db);
+  const authorName = agent?.name || decodedIdentifier;
+
+  return {
+    title: `${authorName} | Reality Decoded Operative`,
+  };
+}
+
+// ==========================================
+// MAIN AUTHOR COMPONENT
+// ==========================================
+export default async function AuthorProfilePage(props: { 
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const { id } = await props.params;
+  const searchParams = await props.searchParams;
+   
+  const activeTab = (searchParams?.tab as string)?.toLowerCase() || 'all';
+   
+  const decodedIdentifier = decodeURIComponent(id);
+   
+  const db = (getRequestContext().env as any).reality_decoded_db;
+  const agent = await getAgent(decodedIdentifier, db);
+  const liveArticles = await getLiveArticles(decodedIdentifier, db);
+
+  const authorName = agent?.name || decodedIdentifier;
+  const authorAvatar = agent?.avatar || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=100&auto=format&fit=crop';
+  const localTime = agent?.timezone ? getLocalTime(agent.timezone as string) : null;
+
+  // 1. DYNAMICALLY EXTRACT CATEGORIES (Case-insensitive deduplication)
+  const rawCategories = liveArticles.map((a: any) => {
+    return (a.category && a.category.trim() !== '') ? a.category : 'Uncategorised';
+  });
+  
+  const categoryMap = new Map();
+  rawCategories.forEach((cat: string) => {
+    const lower = cat.toLowerCase();
+    if (!categoryMap.has(lower)) {
+      categoryMap.set(lower, cat); // Keeps the original casing for display, but deduplicates by lowercase
+    }
+  });
+  const uniqueCategories = Array.from(categoryMap.values()) as string[];
+
+  // 2. FILTER DISPLAYED ARTICLES BY DYNAMIC TAB
   const displayedArticles = liveArticles.filter((a: any) => {
     if (activeTab === 'all') return true;
-    return a.category?.toLowerCase() === activeTab;
+    const articleCategory = ((a.category && a.category.trim() !== '') ? a.category : 'Uncategorised').toLowerCase();
+    return articleCategory === activeTab;
   });
 
   return (
-    <main className="w-full bg-[#000000] text-white min-h-screen pt-32 pb-32">
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-16 lg:gap-24">
+    <main className="w-full bg-[#000000] text-white min-h-screen pt-32 pb-32 overflow-x-hidden">
+      <div className="max-w-[1400px] mx-auto px-5 sm:px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-12 lg:gap-24">
         
         {/* --- LEFT SIDEBAR (RESEND STYLE) --- */}
         <aside className="flex flex-col items-start lg:sticky top-32 h-max w-full">
@@ -85,15 +128,13 @@ export default async function AuthorProfilePage(props: {
           <img 
             src={authorAvatar as string} 
             alt={authorName as string} 
-            className="w-28 h-28 rounded-full object-cover mb-6 hover:grayscale transition-all duration-500 border border-white/10" 
+            className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover mb-6 hover:grayscale transition-all duration-500 border border-white/10 shadow-lg" 
           />
           
-          <h1 className="text-3xl font-bold tracking-tight mb-1">{authorName}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1">{authorName}</h1>
           <p className="text-gray-400 text-sm mb-4">{agent?.role || 'Syndicate Operative'}</p>
 
-
-
-          <div className="space-y-3 text-sm text-gray-400 font-mono w-full mt-2">
+          <div className="space-y-3 text-xs sm:text-sm text-gray-400 font-mono w-full mt-2">
             {agent?.location && (
               <div className="flex items-center gap-3">
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -150,40 +191,42 @@ export default async function AuthorProfilePage(props: {
             )}
           </div>
 
-          {/* 🚨 THE FIX: Render Bio First! */}
-          {agent?.bio && (
-            <ExpandableBio bio={agent.bio as string} />
-          )}
-
-
+          {/* BIO RESTORED TO ITS ORIGINAL POSITION */}
+          <div className="mt-6">
+            {agent?.bio && (
+              <ExpandableBio bio={agent.bio as string} />
+            )}
+          </div>
 
         </aside>
 
         {/* --- RIGHT CONTENT (GRID) --- */}
-        <section className="lg:border-l lg:border-white/10 lg:pl-16">
+        <section className="lg:border-l lg:border-white/10 lg:pl-16 w-full max-w-full">
           
-          <div className="flex gap-2 mb-12 border-b border-white/5 pb-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 mb-10 border-b border-white/5 pb-4 overflow-x-auto scrollbar-hide hide-scroll-bar">
+            {/* 3. DYNAMIC TAB RENDERING */}
             <Link 
               href={`/author/${id}?tab=all`} 
-              className={`px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'all' ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
+              className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'all' ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
             >
               All Posts
             </Link>
-            <Link 
-              href={`/author/${id}?tab=changelog`} 
-              className={`px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'changelog' ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
-            >
-              Changelog
-            </Link>
-            <Link 
-              href={`/author/${id}?tab=intel`} 
-              className={`px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'intel' ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
-            >
-              Intel
-            </Link>
+            
+            {uniqueCategories.map((category) => {
+              const tabValue = category.toLowerCase();
+              return (
+                <Link 
+                  key={tabValue}
+                  href={`/author/${id}?tab=${encodeURIComponent(tabValue)}`} 
+                  className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap capitalize transition-colors ${activeTab === tabValue ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
+                >
+                  {category}
+                </Link>
+              );
+            })}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-10 sm:gap-y-12">
             {displayedArticles.length === 0 ? (
               <p className="text-gray-500 font-mono text-sm">No transmissions logged.</p>
             ) : (
@@ -191,17 +234,20 @@ export default async function AuthorProfilePage(props: {
                 const imgUrl = getFirstImage(article.content) || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop';
                 return (
                   <Link href={`/blogs/${article.slug}`} key={article.id} className="group block">
-                    <div className="w-full aspect-[16/10] bg-[#111] rounded-2xl overflow-hidden mb-5 border border-white/5 group-hover:border-white/20 transition-all shadow-lg">
+                    <div className="w-full aspect-[16/10] bg-[#111] rounded-xl sm:rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-white/5 group-hover:border-white/20 transition-all shadow-lg">
                        <img src={imgUrl} alt={article.title} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
                     </div>
                     
-                    <h3 className="text-xl font-bold text-gray-200 group-hover:text-white transition-colors mb-2 leading-snug line-clamp-2">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-200 group-hover:text-white transition-colors mb-2 leading-snug line-clamp-2">
                       {article.title}
                     </h3>
                     
-                    <div className="text-gray-500 text-sm font-mono flex items-center justify-between">
+                    <div className="text-gray-500 text-xs sm:text-sm font-mono flex items-center justify-between mt-3">
                       <span>{new Date(article.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      <span className="text-[10px] uppercase tracking-widest text-purple-400 border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 rounded">{article.category || 'INTEL'}</span>
+                      {/* CORRECT FALLBACK TAG */}
+                      <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-purple-400 border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 rounded">
+                        {(article.category && article.category.trim() !== '') ? article.category : 'Uncategorised'}
+                      </span>
                     </div>
                   </Link>
                 );
@@ -211,6 +257,15 @@ export default async function AuthorProfilePage(props: {
         </section>
         
       </div>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .hide-scroll-bar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scroll-bar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}} />
     </main>
   );
 }
