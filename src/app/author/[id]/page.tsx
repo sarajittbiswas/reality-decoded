@@ -83,10 +83,9 @@ export default async function AuthorProfilePage(props: {
   const searchParams = await props.searchParams;
    
   const activeTab = (searchParams?.tab as string)?.toLowerCase() || 'all';
-   
   const decodedIdentifier = decodeURIComponent(id);
-   
   const db = (getRequestContext().env as any).reality_decoded_db;
+  
   const agent = await getAgent(decodedIdentifier, db);
   const liveArticles = await getLiveArticles(decodedIdentifier, db);
 
@@ -94,7 +93,7 @@ export default async function AuthorProfilePage(props: {
   const authorAvatar = agent?.avatar || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=100&auto=format&fit=crop';
   const localTime = agent?.timezone ? getLocalTime(agent.timezone as string) : null;
 
-  // 1. DYNAMICALLY EXTRACT CATEGORIES (Case-insensitive deduplication)
+  // 1. DYNAMICALLY EXTRACT CATEGORIES
   const rawCategories = liveArticles.map((a: any) => {
     return (a.category && a.category.trim() !== '') ? a.category : 'Uncategorised';
   });
@@ -108,18 +107,12 @@ export default async function AuthorProfilePage(props: {
   });
   const uniqueCategories = Array.from(categoryMap.values()) as string[];
 
-  // 2. FILTER DISPLAYED ARTICLES BY DYNAMIC TAB
-  const displayedArticles = liveArticles.filter((a: any) => {
-    if (activeTab === 'all') return true;
-    const articleCategory = ((a.category && a.category.trim() !== '') ? a.category : 'Uncategorised').toLowerCase();
-    return articleCategory === activeTab;
-  });
-
   return (
-    <main className="w-full bg-[#000000] text-white min-h-screen pt-32 pb-32 overflow-x-hidden">
-      <div className="max-w-[1400px] mx-auto px-5 sm:px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-12 lg:gap-24">
+    <main className="w-full bg-[#000000] text-white min-h-screen pt-32 pb-32 overflow-x-hidden flex flex-col justify-start">
+      
+      <div className="max-w-[1400px] w-full mx-auto px-5 sm:px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] items-start content-start gap-12 lg:gap-24 mb-auto mt-0">
         
-        {/* 🚨 FIX: Added 'self-start' here so short sidebars never drift down the page */}
+        {/* --- LEFT SIDEBAR (RESEND STYLE) --- */}
         <aside className="flex flex-col items-start lg:sticky top-32 h-max w-full self-start">
           <Link href="/author" className="text-gray-500 hover:text-white transition-colors text-sm flex items-center gap-2 mb-8 font-mono">
              &lt; All Humans
@@ -203,62 +196,117 @@ export default async function AuthorProfilePage(props: {
         <section className="lg:border-l lg:border-white/10 lg:pl-16 w-full max-w-full">
           
           <div className="flex gap-2 mb-10 border-b border-white/5 pb-4 overflow-x-auto scrollbar-hide hide-scroll-bar">
-            {/* 🚨 FIX: Added prefetch={true} to drastically speed up tab switching */}
-            <Link 
-              href={`/author/${id}?tab=all`} 
-              scroll={false}
-              prefetch={true}
-              className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'all' ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
+            
+            <button 
+              data-tab="all"
+              className={`tab-btn px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'all' ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
             >
               All Posts
-            </Link>
+            </button>
             
             {uniqueCategories.map((category) => {
               const tabValue = category.toLowerCase();
               return (
-                <Link 
+                <button 
                   key={tabValue}
-                  href={`/author/${id}?tab=${encodeURIComponent(tabValue)}`} 
-                  scroll={false}
-                  prefetch={true}
-                  className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap capitalize transition-colors ${activeTab === tabValue ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
+                  data-tab={tabValue}
+                  className={`tab-btn px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap capitalize transition-colors ${activeTab === tabValue ? 'bg-white text-black' : 'border border-white/10 text-gray-400 hover:text-white'}`}
                 >
                   {category}
-                </Link>
+                </button>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-10 sm:gap-y-12">
-            {displayedArticles.length === 0 ? (
-              <p className="text-gray-500 font-mono text-sm">No transmissions logged.</p>
-            ) : (
-              displayedArticles.map((article: any) => {
-                const imgUrl = getFirstImage(article.content) || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop';
-                return (
-                  <Link href={`/blogs/${article.slug}`} key={article.id} className="group block">
-                    <div className="w-full aspect-[16/10] bg-[#111] rounded-xl sm:rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-white/5 group-hover:border-white/20 transition-all shadow-lg">
-                       <img src={imgUrl} alt={article.title} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
-                    </div>
-                    
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-200 group-hover:text-white transition-colors mb-2 leading-snug line-clamp-2">
-                      {article.title}
-                    </h3>
-                    
-                    <div className="text-gray-500 text-xs sm:text-sm font-mono flex items-center justify-between mt-3">
-                      <span>{new Date(article.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-purple-400 border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 rounded">
-                        {(article.category && article.category.trim() !== '') ? article.category : 'Uncategorised'}
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-10 sm:gap-y-12" id="articles-container">
+            {liveArticles.length === 0 && (
+              <p className="text-gray-500 font-mono text-sm col-span-2">No transmissions logged.</p>
             )}
+            
+            <p id="empty-state" className="text-gray-500 font-mono text-sm col-span-2" style={{ display: 'none' }}>
+              No transmissions logged for this category.
+            </p>
+
+            {liveArticles.map((article: any) => {
+              const imgUrl = getFirstImage(article.content) || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop';
+              const articleCat = ((article.category && article.category.trim() !== '') ? article.category : 'Uncategorised').toLowerCase();
+              const isVisible = activeTab === 'all' || activeTab === articleCat;
+              
+              return (
+                <Link 
+                  href={`/blogs/${article.slug}`} 
+                  key={article.id} 
+                  data-category={articleCat}
+                  className="article-card group block"
+                  style={{ display: isVisible ? 'block' : 'none' }}
+                >
+                  <div className="w-full aspect-[16/10] bg-[#111] rounded-xl sm:rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-white/5 group-hover:border-white/20 transition-all shadow-lg">
+                     <img src={imgUrl} alt={article.title} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
+                  </div>
+                  
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-200 group-hover:text-white transition-colors mb-2 leading-snug line-clamp-2">
+                    {article.title}
+                  </h3>
+                  
+                  <div className="text-gray-500 text-xs sm:text-sm font-mono flex items-center justify-between mt-3">
+                    <span>{new Date(article.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-purple-400 border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 rounded">
+                      {(article.category && article.category.trim() !== '') ? article.category : 'Uncategorised'}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
         
       </div>
+      
+      {/* 🚨 FIX: Bulletproof Event Delegation Script. This binds globally to the document once, meaning the tabs are NEVER dead, regardless of Next.js soft-routing. */}
+      <script dangerouslySetInnerHTML={{ __html: `
+        if (typeof window !== 'undefined' && !window.__authorTabsInitialized) {
+          window.__authorTabsInitialized = true;
+          document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.tab-btn');
+            if (!btn) return;
+            
+            e.preventDefault();
+            const selectedTab = btn.getAttribute('data-tab');
+            
+            // Update Button Visuals
+            const activeClasses = ['bg-white', 'text-black'];
+            const inactiveClasses = ['border', 'border-white/10', 'text-gray-400', 'hover:text-white'];
+            
+            document.querySelectorAll('.tab-btn').forEach(b => {
+              b.classList.remove(...activeClasses);
+              b.classList.add(...inactiveClasses);
+            });
+            btn.classList.remove(...inactiveClasses);
+            btn.classList.add(...activeClasses);
+            
+            // Filter Articles Instantly
+            let visibleCount = 0;
+            document.querySelectorAll('.article-card').forEach(card => {
+              if (selectedTab === 'all' || card.getAttribute('data-category') === selectedTab) {
+                card.style.display = 'block';
+                visibleCount++;
+              } else {
+                card.style.display = 'none';
+              }
+            });
+            
+            // Toggle empty state
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+            
+            // Quietly update URL without reloading
+            const url = new URL(window.location);
+            url.searchParams.set('tab', selectedTab);
+            window.history.replaceState({}, '', url);
+          });
+        }
+      `}} />
+      
       <style dangerouslySetInnerHTML={{ __html: `
         .hide-scroll-bar::-webkit-scrollbar {
           display: none;

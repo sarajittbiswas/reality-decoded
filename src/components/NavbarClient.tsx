@@ -256,8 +256,8 @@ export default function NavbarClient({ data }: { data: any }) {
                     <div className="flex flex-col gap-2 animate-[fade-in-up_0.2s_ease-out]">
                       <span className={`${jetBrainsMono.className} text-[9px] uppercase tracking-widest text-zinc-500 px-1`}>Top Contributors (2)</span>
                       <div className="grid grid-cols-2 gap-2">
-                        {data.authors?.[0] ? <NavCard href="/author" label="Author" title={data.authors[0].name} subtitle={data.authors[0].role} image={data.authors[0].avatar} /> : <div className="text-xs text-zinc-500 p-2">No authors found.</div>}
-                        {data.authors?.[1] ? <NavCard href="/author" label="Author" title={data.authors[1].name} subtitle={data.authors[1].role} image={data.authors[1].avatar} /> : null}
+                        {data.authors?.[0] ? <NavCard href={`/author/${data.authors[0].id}`} label="Author" title={data.authors[0].name} subtitle={data.authors[0].role} image={data.authors[0].avatar} /> : <div className="text-xs text-zinc-500 p-2">No authors found.</div>}
+                        {data.authors?.[1] ? <NavCard href={`/author/${data.authors[1].id}`} label="Author" title={data.authors[1].name} subtitle={data.authors[1].role} image={data.authors[1].avatar} /> : null}
                       </div>
                     </div>
                   )}
