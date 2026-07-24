@@ -227,33 +227,46 @@ const buildCoordinates = () => {
 };
 
 // ---------------------------------------------------------
-// 3. COLOR NAME ENGINE
+// 3. HEX COLOR CONVERTER
 // ---------------------------------------------------------
-const getColorName = (hue: number) => {
-  if (hue === 0) return "Pure White";
-  if (hue < 20) return "Crimson Red";
-  if (hue < 45) return "Sunset Orange";
-  if (hue < 70) return "Cyber Yellow";
-  if (hue < 150) return "Neon Green";
-  if (hue < 210) return "Electric Cyan";
-  if (hue < 270) return "Deep Blue";
-  if (hue < 320) return "Ultraviolet";
-  if (hue <= 360) return "Rose Pink";
-  return "Unknown";
+const getHexCode = (hue: number, isWhite: boolean) => {
+  if (isWhite) return "#FFFFFF";
+  const h = hue;
+  const s = 80;
+  const l = 60;
+  
+  const lDec = l / 100;
+  const a = (s * Math.min(lDec, 1 - lDec)) / 100;
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = lDec - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
 };
 
 // ---------------------------------------------------------
 // 4. MAIN PAGE
 // ---------------------------------------------------------
 export default function NotFound() {
-  const [hue, setHue] = useState(0); // Starts at Pure White (0)
+  const [hue, setHue] = useState(0); 
   const [jokeIndex, setJokeIndex] = useState<number | null>(null);
+
+  // FIX: Force document title aggressively to prevent Next.js layout overwrite
+  useEffect(() => {
+    document.title = "404 - Reality Not Found | Reality Decoded";
+    // Failsafe timeout in case layout applies metadata asynchronously during hydration
+    const timeout = setTimeout(() => {
+      document.title = "404 - Reality Not Found | Reality Decoded";
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, []);
 
   // Initialize Joke (No Repeats Logic)
   useEffect(() => {
     let seen = JSON.parse(sessionStorage.getItem('seen404Jokes') || '[]');
     if (seen.length >= JOKES_DB.length) {
-      seen = []; // Reset when all are seen
+      seen = []; 
     }
     const unseenIndices = JOKES_DB.map((_, i) => i).filter(i => !seen.includes(i));
     const randomIdx = unseenIndices[Math.floor(Math.random() * unseenIndices.length)];
@@ -275,17 +288,23 @@ export default function NotFound() {
     }));
   }, []);
 
-  if (jokeIndex === null) return null; // Wait for hydration
-  const joke = JOKES_DB[jokeIndex];
+  if (jokeIndex === null) {
+    return (
+      <main className={`min-h-screen bg-[#050505] ${inter.className}`}>
+        <title>404 - Reality Not Found | Reality Decoded</title>
+      </main>
+    );
+  }
 
-  // Helper variables for slider logic
+  const joke = JOKES_DB[jokeIndex];
   const isWhite = hue === 0;
   const sliderColor = isWhite ? "#ffffff" : `hsl(${hue}, 90%, 60%)`;
+  const currentHex = getHexCode(hue, isWhite);
 
   return (
     <main className={`min-h-screen bg-[#050505] text-zinc-300 flex flex-col items-center justify-center relative overflow-x-hidden ${inter.className}`}>
       
-      {/* PERFECT SEO METADATA FOR CLIENT COMPONENT */}
+      {/* PERFECT SEO METADATA */}
       <title>404 - Reality Not Found | Reality Decoded</title>
 
       {/* Background Grid */}
@@ -312,8 +331,8 @@ export default function NotFound() {
 
         input[type=range]::-webkit-slider-thumb {
           -webkit-appearance: none;
-          height: 28px;
-          width: 28px;
+          height: 32px;
+          width: 32px;
           border-radius: 50%;
           background: #fff;
           border: 4px solid #000;
@@ -329,15 +348,28 @@ export default function NotFound() {
       <div className="relative z-10 w-full max-w-5xl px-4 flex flex-col items-center pt-24 pb-12">
         
         {/* HEADER BADGE */}
-        <div className={`${jetBrainsMono.className} inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-widest mb-10 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]`}>
+        <div className={`${jetBrainsMono.className} inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-widest mb-12 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]`}>
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
           Decoded Archives // Error 404
         </div>
 
         {/* ---------------------------------------------------------
+            DYNAMIC CARTOON ICON & JOKE (MOVED TO TOP)
+        --------------------------------------------------------- */}
+        <div className="text-center flex flex-col items-center mb-16 px-4">
+          {joke.icon}
+          <h2 className={`${spaceGrotesk.className} text-2xl md:text-4xl text-white font-bold mb-4 tracking-tight`}>
+            Whoops, that page is gone.
+          </h2>
+          <p className="text-zinc-400 text-sm md:text-base font-light max-w-xl leading-relaxed">
+            {joke.text}
+          </p>
+        </div>
+
+        {/* ---------------------------------------------------------
             THE "404 REALITY DECODED" MINIATURE SVG ENGINE
         --------------------------------------------------------- */}
-        <div className="w-full max-w-4xl mb-12">
+        <div className="w-full max-w-4xl mb-12 px-2">
           <svg viewBox="0 0 984 456" className="w-full h-auto drop-shadow-2xl overflow-visible">
             <g>
               {svgBlocks.map((b) => {
@@ -347,31 +379,26 @@ export default function NotFound() {
                 const posX = b.x * cellSize;
                 const posY = b.y * cellSize;
                 
-                // Shuffle logic! The UI block type changes as the hue slider moves
                 const activeUiType = (b.baseUiType + (isWhite ? 0 : Math.floor(hue / 30))) % 8;
 
-                // Color overrides for the Pure White feature (0) vs Hue Spectrum (1-360)
                 const baseColor = isWhite ? `hsl(0, 0%, ${b.lightness + 20}%)` : `hsl(${hue + b.hueOffset}, 80%, ${b.lightness}%)`;
                 const darkAccent = isWhite ? `hsl(0, 0%, ${b.lightness - 10}%)` : `hsl(${hue + b.hueOffset}, 80%, ${b.lightness - 25}%)`;
                 const lightAccent = isWhite ? `hsl(0, 0%, 100%)` : `hsl(${hue + b.hueOffset}, 80%, ${b.lightness + 25}%)`;
 
                 return (
-                  <g key={b.id} transform={`translate(${posX}, ${posY})`} className="transition-all duration-300 ease-out">
+                  <g key={b.id} transform={`translate(${posX}, ${posY})`}>
                     
-                    {/* The Base Card Block */}
-                    <rect width={actualSize} height={actualSize} rx="2" fill={baseColor} className="transition-colors duration-300 ease-out" />
+                    <rect width={actualSize} height={actualSize} rx="2" fill={baseColor} />
 
-                    {/* TYPE 0: Landscape Photo */}
                     {activeUiType === 0 && (
-                      <g className="transition-colors duration-300">
+                      <g>
                         <circle cx="16" cy="6" r="3" fill={lightAccent} />
                         <polygon points="0,22 8,12 14,18 22,10 22,22" fill={darkAccent} />
                       </g>
                     )}
 
-                    {/* TYPE 1: Browser Window */}
                     {activeUiType === 1 && (
-                      <g className="transition-colors duration-300">
+                      <g>
                         <rect width="22" height="5" fill={darkAccent} rx="2" />
                         <circle cx="3" cy="2.5" r="1" fill={lightAccent} />
                         <circle cx="6" cy="2.5" r="1" fill={lightAccent} />
@@ -380,27 +407,24 @@ export default function NotFound() {
                       </g>
                     )}
 
-                    {/* TYPE 2: Bar Chart */}
                     {activeUiType === 2 && (
-                      <g className="transition-colors duration-300">
+                      <g>
                         <rect x="3" y="12" width="4" height="8" fill={lightAccent} />
                         <rect x="9" y="8" width="4" height="12" fill={darkAccent} />
                         <rect x="15" y="4" width="4" height="16" fill={lightAccent} />
                       </g>
                     )}
 
-                    {/* TYPE 3: User Profile */}
                     {activeUiType === 3 && (
-                      <g className="transition-colors duration-300">
+                      <g>
                         <circle cx="11" cy="8" r="4" fill={darkAccent} />
                         <rect x="4" y="14" width="14" height="2" rx="1" fill={lightAccent} />
                         <rect x="7" y="18" width="8" height="2" rx="1" fill={darkAccent} />
                       </g>
                     )}
 
-                    {/* TYPE 4: Code Editor */}
                     {activeUiType === 4 && (
-                      <g className="transition-colors duration-300">
+                      <g>
                         <text x="2" y="7" fontSize="6" fill={darkAccent} fontFamily="monospace" fontWeight="bold">&gt;_</text>
                         <rect x="2" y="10" width="10" height="2" fill={lightAccent} />
                         <rect x="2" y="14" width="16" height="2" fill={darkAccent} />
@@ -408,18 +432,16 @@ export default function NotFound() {
                       </g>
                     )}
 
-                    {/* TYPE 5: Video Player */}
                     {activeUiType === 5 && (
-                      <g className="transition-colors duration-300">
+                      <g>
                         <polygon points="8,6 16,11 8,16" fill={darkAccent} />
                         <rect x="2" y="19" width="18" height="1.5" fill={darkAccent} />
                         <circle cx="6" cy="19.75" r="1.5" fill={lightAccent} />
                       </g>
                     )}
 
-                    {/* TYPE 6: Document/Text Lines */}
                     {activeUiType === 6 && (
-                      <g className="transition-colors duration-300">
+                      <g>
                         <rect x="4" y="4" width="14" height="2" fill={darkAccent} />
                         <rect x="4" y="8" width="10" height="2" fill={lightAccent} />
                         <rect x="4" y="12" width="12" height="2" fill={darkAccent} />
@@ -427,9 +449,8 @@ export default function NotFound() {
                       </g>
                     )}
 
-                    {/* TYPE 7: Folder Icon */}
                     {activeUiType === 7 && (
-                      <g className="transition-colors duration-300">
+                      <g>
                         <path d="M 3 6 L 9 6 L 11 9 L 19 9 L 19 18 L 3 18 Z" fill={darkAccent} />
                       </g>
                     )}
@@ -442,13 +463,13 @@ export default function NotFound() {
         </div>
 
         {/* ---------------------------------------------------------
-            THE CLEAN, DRIBBBLE-STYLE COLOR SLIDER (WITH WHITE)
+            THE CLEAN, DRIBBBLE-STYLE COLOR SLIDER (WITH HEX CODES)
         --------------------------------------------------------- */}
-        <div className="w-full max-w-lg mx-auto mb-20 px-4">
-          <div className={`${jetBrainsMono.className} text-[10px] uppercase tracking-widest font-bold mb-4 flex justify-between w-full`}>
+        <div className="w-full max-w-lg mx-auto mb-16 px-4">
+          <div className={`${jetBrainsMono.className} text-[10px] md:text-xs uppercase tracking-widest font-bold mb-5 flex justify-between w-full items-end`}>
             <span className="text-zinc-500">Alter Spectrum</span>
-            <span style={{ color: sliderColor }} className="transition-colors duration-300 drop-shadow-md">
-              {getColorName(hue)}
+            <span style={{ color: sliderColor }} className="text-lg md:text-xl drop-shadow-md">
+              {currentHex}
             </span>
           </div>
           
@@ -471,19 +492,6 @@ export default function NotFound() {
                 hsl(360, 100%, 50%) 100%)`
             }}
           />
-        </div>
-
-        {/* ---------------------------------------------------------
-            DYNAMIC CARTOON ICON & JOKE
-        --------------------------------------------------------- */}
-        <div className="text-center flex flex-col items-center mb-16 px-4">
-          {joke.icon}
-          <h2 className={`${spaceGrotesk.className} text-2xl md:text-4xl text-white font-bold mb-4 tracking-tight`}>
-            Whoops, that page is gone.
-          </h2>
-          <p className="text-zinc-400 text-sm md:text-base font-light max-w-xl leading-relaxed">
-            {joke.text}
-          </p>
         </div>
 
         {/* ---------------------------------------------------------
