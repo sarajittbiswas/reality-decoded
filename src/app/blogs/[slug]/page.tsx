@@ -40,7 +40,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const resolvedParams = await params;
     const db = (getRequestContext().env as any).reality_decoded_db;
     
-    // 🚨 FIX: Added 'excerpt' to the SELECT statement!
     const article = await db.prepare("SELECT title, category, content, excerpt FROM articles WHERE slug = ?").bind(resolvedParams.slug).first();
     
     if (!article) return { title: 'Not Found | Reality Decoded' };
@@ -48,7 +47,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const baseUrl = 'https://realitydecoded.in';
     const cleanDescription = (article.content as string).replace(/<[^>]*>?/gm, '').substring(0, 160) + '...';
     
-    // 🚨 FIX: Your perfectly clean fallback logic
     const finalDescription = (article.excerpt as string) || cleanDescription;
 
     const extractedImg = getFirstImage(article.content as string);
@@ -156,9 +154,12 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   const heroImage = getFirstImage(article.content) || 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000&auto=format&fit=crop';
   const readTime = calculateReadingTime(article.content);
   
+  // 🚨 FIX: Standardized the fallback category logic
+  const displayCategory = (article.category && article.category.trim() !== '') ? article.category : 'Uncategorised';
+  
   const tags = article.tags && article.tags.trim() !== "" 
     ? article.tags.split(',').map((t: string) => t.trim()).filter(Boolean) 
-    : [article.category || 'INTEL'];
+    : [displayCategory];
 
   return (
     <main className={`min-h-screen bg-[#050505] pt-32 pb-24 relative overflow-hidden ${inter.className}`}>
@@ -178,8 +179,8 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           <span className="text-white/10">/</span>
           <Link href="/blogs" className="hover:text-zinc-300 transition-colors">Archives</Link>
           <span className="text-white/10">/</span>
-          <Link href={`/archives/${encodeURIComponent(article.category?.toLowerCase() || 'Investigation')}`} className="hover:text-zinc-300 transition-colors">
-            {article.category || 'Investigation'}
+          <Link href={`/archives/${encodeURIComponent(displayCategory.toLowerCase())}`} className="hover:text-zinc-300 transition-colors">
+            {displayCategory}
           </Link>
           <span className="text-white/10">/</span>
           <span className="text-zinc-300 truncate max-w-[150px] md:max-w-xs font-bold" title={article.title as string}>
@@ -192,7 +193,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           <div className="flex items-center justify-center gap-3 mb-6">
             <span className={`${jetBrainsMono.className} inline-flex items-center gap-2 bg-white/5 border border-white/10 text-zinc-300 text-[10px] font-bold px-3 py-1.5 rounded-sm uppercase tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.05)]`}>
               <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
-              {article.category || 'Investigation'}
+              {displayCategory}
             </span>
             <span className={`${jetBrainsMono.className} text-[10px] text-zinc-600 tracking-widest uppercase`}>
               ID: RD-{slug.substring(0,6).toUpperCase()}
@@ -243,7 +244,6 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
         </div>
 
         {/* --- MAIN CONTENT & PROSE --- */}
-        {/* 🚀 CLEANED: Removed all background boxes, glass effects, borders, and animations. Just plain text container. */}
         <div className="max-w-[700px] mx-auto relative group/prose">
           
           <div className="relative z-10 py-6 md:py-10">
@@ -298,6 +298,8 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                   github: related.agent_github, twitter: related.agent_twitter, linkedin: related.agent_linkedin, 
                   instagram: related.agent_instagram, facebook: related.agent_facebook, reddit: related.agent_reddit
                 } : null;
+                
+                const relCategory = (related.category && related.category.trim() !== '') ? related.category : 'Uncategorised';
 
                 return (
                   <Link href={`/blogs/${related.slug}`} key={related.slug} className="group block h-full relative flex flex-col hover:z-50 hover:-translate-y-1 transition-transform duration-500">
@@ -314,7 +316,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                          <img src={relatedThumb} alt={related.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out" />
                       </div>
                       <span className={`${jetBrainsMono.className} text-[9px] font-bold text-zinc-300 uppercase tracking-widest mb-2.5 block bg-white/10 w-max px-2 py-1 rounded-sm border border-white/5`}>
-                        {related.category || 'INTEL'}
+                        {relCategory}
                       </span>
                       <h4 className={`${spaceGrotesk.className} font-bold text-zinc-200 group-hover:text-white line-clamp-2 text-sm md:text-base leading-snug mb-5 flex-grow`}>
                         {related.title}
@@ -384,7 +386,6 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
         .syndicate-prose h3 { font-size: 1.25rem; }
         @media (min-width: 768px) { .syndicate-prose h3 { font-size: 1.5rem; } }
         
-        /* 🚀 STRICT RESET: Ensures regular paragraphs NEVER get borders or left lines */
         .syndicate-prose p { 
           margin-bottom: 1.25em; 
           font-weight: 300;
@@ -424,7 +425,6 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           margin-bottom: 0.5em;
         }
         
-        /* 🚀 STRICT BLOCKQUOTE ONLY: Applies line exclusively to true HTML blockquotes */
         article .syndicate-prose blockquote { 
           border-top: none !important;
           border-right: none !important;
