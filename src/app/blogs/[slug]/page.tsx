@@ -178,8 +178,8 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
           <span className="text-white/10">/</span>
           <Link href="/blogs" className="hover:text-zinc-300 transition-colors">Archives</Link>
           <span className="text-white/10">/</span>
-          <Link href={`/archives/${encodeURIComponent(article.category?.toLowerCase() || 'intel')}`} className="hover:text-zinc-300 transition-colors">
-            {article.category || 'INTEL'}
+          <Link href={`/archives/${encodeURIComponent(article.category?.toLowerCase() || 'Investigation')}`} className="hover:text-zinc-300 transition-colors">
+            {article.category || 'Investigation'}
           </Link>
           <span className="text-white/10">/</span>
           <span className="text-zinc-300 truncate max-w-[150px] md:max-w-xs font-bold" title={article.title as string}>

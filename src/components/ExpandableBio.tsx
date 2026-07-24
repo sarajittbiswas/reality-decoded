@@ -16,7 +16,7 @@ export default function ExpandableBio({ bio }: { bio: string }) {
         {bio.length > 120 && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-purple-400 hover:text-purple-300 text-[10px] font-bold tracking-widest uppercase mt-3 transition-colors bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg flex items-center gap-2"
+            className="text-purple-400 hover:text-purple-300 cursor-pointer text-[10px] font-bold tracking-widest uppercase mt-3 transition-colors bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg flex items-center gap-2"
           >
             {expanded ? 'Collapse Bio' : 'Read Full Bio'}
           </button>

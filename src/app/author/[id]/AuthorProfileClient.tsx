@@ -43,7 +43,6 @@ export default function AuthorProfileClient({
 
       <div className="max-w-[1200px] w-full mx-auto px-6 lg:px-8 flex flex-col lg:flex-row items-start gap-12 lg:gap-20">
         
-        {/* 🚨 FIXED: Applied sticky directly to the aside. Removed the broken inner wrapper. */}
         <aside className="w-full lg:w-[260px] shrink-0 lg:sticky lg:top-24 h-max">
           
           <Link href="/author" className="text-[#888888] hover:text-white transition-colors text-[13px] flex items-center gap-2 mb-8 font-mono">
@@ -121,9 +120,10 @@ export default function AuthorProfileClient({
         <section className="flex-1 w-full min-h-[150vh]">
           
           <div className="flex flex-wrap items-center gap-2 mb-10">
+            
             <button 
               onClick={() => handleTabSwitch('all')}
-              className={`px-4 py-1.5 rounded-full text-[14px] font-medium transition-all duration-200 ${
+              className={`px-4 py-1.5 rounded-full text-[14px] font-medium cursor-pointer transition-all duration-200 ${
                 activeTab === 'all' 
                   ? 'bg-white text-black' 
                   : 'text-[#888888] hover:text-[#ededed]'
@@ -135,10 +135,11 @@ export default function AuthorProfileClient({
             {uniqueCategories.map((category: string) => {
               const tabValue = category.toLowerCase();
               return (
+                
                 <button 
                   key={tabValue}
                   onClick={() => handleTabSwitch(tabValue)}
-                  className={`px-4 py-1.5 rounded-full text-[14px] font-medium transition-all duration-200 capitalize ${
+                  className={`px-4 py-1.5 rounded-full text-[14px] font-medium cursor-pointer transition-all duration-200 capitalize ${
                     activeTab === tabValue 
                       ? 'bg-white text-black' 
                       : 'text-[#888888] hover:text-[#ededed]'
