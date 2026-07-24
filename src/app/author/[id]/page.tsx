@@ -115,11 +115,11 @@ export default async function AuthorProfilePage(props: {
   return (
     <main className="w-full bg-[#000000] text-white min-h-screen pt-32 pb-32 overflow-x-hidden">
       
-      {/* 🚨 FIX 1: Removed CSS Grid. Replaced with Flexbox (flex-row on desktop, flex-col on mobile). */}
-      <div className="max-w-[1400px] w-full mx-auto px-5 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-start gap-12 lg:gap-0">
+      {/* 🚨 THE FIX: A pure Flexbox container. No absolute positioning, no Grid bugs. */}
+      <div className="max-w-[1400px] w-full mx-auto px-5 sm:px-6 lg:px-12 flex flex-col lg:flex-row items-start gap-12 lg:gap-16">
         
-        {/* 🚨 FIX 2: Fixed 300px width on desktop. h-max ensures it doesn't stretch and sticky works cleanly. */}
-        <aside className="flex flex-col lg:w-[300px] shrink-0 h-max lg:sticky top-32 w-full">
+        {/* 🚨 SIDEBAR: Properly placed in the document flow so it respects the footer. */}
+        <aside className="w-full lg:w-[300px] shrink-0 flex flex-col lg:sticky top-32 h-max">
           <Link href="/author" className="text-gray-500 hover:text-white transition-colors text-sm flex items-center gap-2 mb-8 font-mono">
              &lt; All Humans
           </Link>
@@ -191,11 +191,10 @@ export default async function AuthorProfilePage(props: {
           </div>
         </aside>
 
-        {/* 🚨 FIX 3: Flex-1 takes over the right side. min-h-[40vh] acts as a physical barrier preventing the container height from violently collapsing. */}
-        <section className="flex-1 lg:border-l lg:border-white/10 lg:pl-16 lg:ml-16 w-full max-w-full min-h-[40vh]">
+        {/* 🚨 RIGHT CONTENT: flex-1 takes the remaining space. min-h-[10vh] prevents the layout collapse jump. */}
+        <section className="flex-1 w-full min-h-[10vh] lg:pl-16 lg:border-l lg:border-white/10">
           
           <div className="tabs-nav flex gap-2 mb-10 border-b border-white/5 pb-4 overflow-x-auto scrollbar-hide hide-scroll-bar">
-            {/* NEXT.JS LINK WITH SCROLL={FALSE} */}
             <Link 
               href={`/author/${id}?tab=all`}
               scroll={false} 
