@@ -191,8 +191,8 @@ export default async function AuthorProfilePage(props: {
           </div>
         </aside>
 
-        {/* 🚨 FIX 3: Flex-1 takes over the right side. min-h-[100vh] acts as a physical barrier preventing the container height from violently collapsing. */}
-        <section className="flex-1 lg:border-l lg:border-white/10 lg:pl-16 lg:ml-16 w-full max-w-full min-h-[100vh]">
+        {/* 🚨 FIX 3: Flex-1 takes over the right side. min-h-[40vh] acts as a physical barrier preventing the container height from violently collapsing. */}
+        <section className="flex-1 lg:border-l lg:border-white/10 lg:pl-16 lg:ml-16 w-full max-w-full min-h-[40vh]">
           
           <div className="tabs-nav flex gap-2 mb-10 border-b border-white/5 pb-4 overflow-x-auto scrollbar-hide hide-scroll-bar">
             {/* NEXT.JS LINK WITH SCROLL={FALSE} */}
