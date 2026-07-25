@@ -11,6 +11,9 @@ export default function AskAI() {
     if (path.includes('terms')) return 'Terms of Service';
     if (path.includes('disclaimer')) return 'Disclaimer';
     if (path.includes('editorial')) return 'Editorial Policy';
+    if (path.includes('cookie-policy')) return 'Cookie Policy';
+    if (path.includes('methodology')) return 'Investigative Methodology';
+    if (path.includes('legal')) return 'Legal Framework & Whistleblower Protocol';
     return 'documentation';
   };
   

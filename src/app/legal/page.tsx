@@ -1,6 +1,7 @@
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import AskAI from '@/components/AskAI';
 
 export const metadata: Metadata = {
   title: 'Whistleblower Protocol & Legal | Reality Decoded',
@@ -37,7 +38,7 @@ export default function LegalPage() {
             Last Updated: July 2026 • Protocol Version 4.2 • Zero-Retention Mandate
           </p>
         </div>
-
+<AskAI />
         {/* Content Body with Beam Glow Cards & Animated SVGs */}
         <div className="space-y-8 text-zinc-300 font-light leading-relaxed">
           

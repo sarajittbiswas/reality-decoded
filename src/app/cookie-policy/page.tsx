@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import Link from 'next/link';
+import AskAI from '@/components/AskAI';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 const inter = Inter({ subsets: ['latin'] });
@@ -55,7 +56,7 @@ export default function CookiePolicyPage() {
             Last Updated: {lastUpdated}
           </p>
         </div>
-
+<AskAI />
         {/* Top-Tier Prose Content */}
         <div className="syndicate-prose relative">
           

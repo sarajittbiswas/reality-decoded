@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
+import AskAI from '@/components/AskAI';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 const inter = Inter({ subsets: ['latin'] });
@@ -30,7 +31,7 @@ export default function MethodologyPage() {
             We do not rely on PR statements or access journalism. Reality Decoded rebuilds the truth from the ground up using Right to Information (RTI) laws, public record audits, and rigorous on-the-ground community sourcing. 
           </p>
         </div>
-
+<AskAI />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {[
             { 
